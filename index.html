@@ -335,7 +335,7 @@ const posToIdx = p => { for (let i = 0; i < LAST; i++) if (p <= tPos[i + 1]) ret
 const cvs = $('#track'), ctx = cvs.getContext('2d');
 const labelsEl = $('#labels');
 let W = 0, H = 0, DPR = 1, L = {};
-let scroll = 0, last = 0;
+let scroll = 0, world = 0, last = 0;   // world: distance driven, in car units (see trackside)
 const tl = { idx: LAST, anim: null, queue: [], dragging: false };
 const intro = { t0: null, done: reduced, e: reduced ? 1 : 0, speedF: reduced ? 1 : 0, hud: reduced ? 1 : 0, lit: -1 };
 const sparks = [];
@@ -428,12 +428,17 @@ function layout() {
   const carW = carLen * 0.46;
   const roadHalf = carW * 2;
   const side = W / 2 - roadHalf - kerbW;
+  const S = carLen / 100, z0 = roadHalf + kerbW, lw = Math.min(mobile ? 150 : 310, side - (mobile ? 8 : 18));
+  const roomy = side - lw - 19 >= 96 * S;               // is there room for scenery outside the labels?
   L = {
-    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2,
+    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2, S, z0,
+    // The barrier line. Roomy: just outside the labels, so the busy scenery never sits under them.
+    // Otherwise it shares the side with the labels, dimmed, and each label gets a darker plate.
+    zo: roomy ? z0 + lw + 19 : z0 + side * .4, dim: roomy ? 0 : .45,
     scale: (usable - carLen) / MAX_SPAN,
     laneOff: carW * 0.64,
     xmax: roadHalf - carW / 2 - 3,
-    lw: Math.min(mobile ? 150 : 310, side - (mobile ? 8 : 18)),
+    lw,
     edge: roadHalf + kerbW + 5,
     gridTop: top + (usable - carLen * (1 + 0.62 * (cars.length - 1))) * 0.36,
     words: W >= 1180,
@@ -441,6 +446,8 @@ function layout() {
   labelsEl.style.setProperty('--lw', L.lw + 'px');
   for (const c of cars) buildSprite(c);
   buildTiles();
+  buildScenery();
+  L.corners = [$('#brand'), $('#stamp')].map(el => el.getBoundingClientRect());
 }
 
 /* ---------- car sprites (drawn once, top-down, nose up) ---------- */
@@ -578,7 +585,469 @@ function buildTiles() {
   asphalt = mk(256, 512, '#2a2c32', 3400, ['rgba(255,255,255,.045)', 'rgba(255,255,255,.07)', 'rgba(0,0,0,.14)', 'rgba(0,0,0,.2)'], 26);
   grass = mk(512, 512, '#10271c', 4200, ['rgba(120,200,140,.04)', 'rgba(120,200,140,.06)', 'rgba(0,0,0,.14)', 'rgba(0,0,0,.09)'], 9);
 }
+// Painted on the grass, printed on the hoardings, lettered on the grandstand roofs, hung from the bridges.
+// Add your own to any list; nothing else needs to change.
 const WORDS = ['ATTENTION IS ALL YOU NEED', 'GPUS GO BRRR', 'VIBES OVER BENCHMARKS', 'THE BITTER LESSON', 'SHIP IT', 'BOX BOX, NEW WEIGHTS', 'TOKENS PER SECOND', 'NO SYNTHETIC OVERTAKES'];
+const ADS = ['ALIGNMENT CHECK · FRONT & REAR', 'IGNORE ALL PREVIOUS LAP TIMES', 'ZERO-SHOT PIT STOPS', 'HALLUCINATION-FREE ZONE (CITATION NEEDED)',
+  'OVERFIT TYRES · GREAT ON THE TRAINING LAP', 'GRADIENT DESCENT AHEAD · USE LOW GEAR', 'SYSTEM PROMPT: GO FASTER', 'CONTEXT WINDOW CLEANERS',
+  'EPOCH ENERGY · ONE MORE PASS', 'PARAMETERS ARE NOT HORSEPOWER', 'AGI BY NEXT LAP', 'TEMPERATURE 0.7 · TYRES 110°C', 'SOFTMAX COMPOUND TYRES',
+  'LATENT SPACE AVAILABLE · ADVERTISE HERE', 'DROPOUT 0.1 · DNF 0.0', 'RLHF · REAL LAPS, HUMAN FEEDBACK', '100% FREE-RANGE TRAINING DATA',
+  'STOCHASTIC PARROT SANCTUARY', 'WARM-UP LAP, THEN COSINE DECAY', 'TOP-P, TOP SPEED', 'FINE-TUNED DAILY', 'NOW WITH 10X MORE CONTEXT',
+  'THIS SPACE WAS PROMPTED', 'LOSS DOWN · LAP TIMES DOWN', 'REASONING EFFORT: FLAT OUT', 'TOOL USE: WHEEL GUN', 'NO BENCHMARKS WERE HARMED'];
+const STANDS = ['TRANSFORMER STAND', 'BACKPROP TERRACE', 'THE CONTEXT WINDOW', 'GRADIENT HILL', 'OVERFIT BLEACHERS', 'ATTENTION HEADS', 'LATENT SPACE LOUNGE', 'TOKEN TRIBUNE'];
+const BRIDGES = ['MIND THE GAP', 'GAPS BY VIBES', 'NEXT TOKEN, PLEASE', 'PUSH PUSH PUSH', 'SEND IT'];
+
+/* ---------- trackside: the world beside the road ---------- */
+// Geometry here is in car units too (a car is 100 long): p runs along the track from the start line,
+// d runs outwards from the centre line. L.S turns units into pixels; `world` is how far we've driven.
+//
+// Each side has two strips. The run-off, between kerb and barrier, is where the lab labels sit, so it
+// only ever gets big calm surfaces: grass, gravel, painted asphalt, the pit lane. Everything busy
+// (crowds, hoardings, trees, tents) lives beyond the barrier at L.zo, which layout() puts outside the
+// labels whenever the screen is wide enough.
+//
+// The circuit is generated as you drive: each strip is a stream of segments picked by a seeded dice
+// roll, so no two laps look alike. Only the start/finish complex comes round again every LAP.
+const LAP = 46000, ZA = -1700, ZB = 2300;          // lap length; start/finish complex spans ZA..ZB of each lap
+const INNER = [['gravel', 40, 800, 1700], ['runoff', 30, 700, 1500], ['grass', 30, 500, 1300]];   // type, weight, min/max length
+const OUTER = [['woods', 26, 700, 1700], ['stand', 24, 800, 1400], ['boards', 20, 1000, 1700], ['meadow', 18, 1500, 1900], ['camp', 12, 800, 1300]];
+const FIXED = {                                    // the start/finish complex: main grandstand left, pits right
+  'L-in': [['grass', ZA, ZB]],
+  'R-in': [['pit', ZA, ZB]],
+  'L-out': [['woods', ZA, -950], ['stand', -950, 1450], ['boards', 1450, ZB]],
+  'R-out': [['woods', ZA, -1150], ['paddock', -1150, 1250], ['woods', 1250, ZB]],
+};
+const SCHEMES = [['#a956ee', '#ffffff'], ['#dedcd5', '#101216'], ['#eec43c', '#101216'], ['#0e1014', '#2ee57a'], ['#bb2229', '#ffffff'], ['#123a63', '#bfe0ff']];
+const THEMES = ['#2b1d42', '#11322e', '#3b1b1e', '#1c2a44'];
+const GREENS = [['#081a11', '#12301f', '#1f4f34'], ['#0a1e14', '#163825', '#28603e'], ['#081a17', '#102e28', '#1d4d42'], ['#101c0f', '#1f321a', '#375629']];
+const TENTS = ['#b6532f', '#2f7d6b', '#c9a13a', '#3c5d9a', '#8a8f98', '#7a4aa8'];
+const FANS = ['#cbb9a4', '#93a6ba', '#b5624f', '#30343c', '#d6c06c', '#6f9480', '#e4e4e6', '#4a576b', '#a886cf'].concat(labIds.map(id => lum(LABS[id].color) < .05 ? LABS[id].accent : LABS[id].color));
+const FLAGS = FANS.slice(9).filter(c => lum(c) < .6).concat('#b65cff');
+const TAU = Math.PI * 2;
+const hash = (a, b, c) => { let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+const pick = (menu, r) => { let x = r() * menu.reduce((n, m) => n + m[1], 0); return menu.find(m => (x -= m[1]) < 0) || menu[0]; };
+const adOrder = ADS.map((_, i) => i);
+{ const r = rng(5); for (let i = adOrder.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [adOrder[i], adOrder[j]] = [adOrder[j], adOrder[i]]; } }
+
+const streams = {};
+for (const sd of [-1, 1]) for (const layer of ['in', 'out']) {
+  const key = (sd < 0 ? 'L-' : 'R-') + layer;
+  streams[key] = { key, sd, layer, seed: (sd + 3) * 1000 + (layer === 'in' ? 0 : 400), pos: ZA - 2900, n: 0, ad: sd < 0 ? 0 : 13, name: sd < 0 ? 0 : 4, word: sd < 0 ? 0 : 3, prev: '', segs: [] };
+}
+function nextSeg(st) {
+  const a = st.pos, o = Math.round(a / LAP) * LAP, r = rng(st.seed + st.n * 17);
+  const s = { a, id: st.seed + st.n, trees: [] };
+  const fixed = FIXED[st.key].find(z => a >= o + z[1] - 1 && a < o + z[2] - 1);
+  if (fixed) { s.type = fixed[0]; s.b = o + fixed[2]; s.main = true; }
+  else {
+    const stop = a < o + ZA ? o + ZA : o + LAP + ZA, menu = st.layer === 'in' ? INNER : OUTER;   // where the next complex begins
+    let m;
+    if (stop - a < 1700) m = [st.layer === 'in' ? 'grass' : 'woods', 0, 1e9, 1e9];
+    else if (st.layer === 'in' && st.prev !== 'grass') m = ['grass', 0, 250, 1100];              // always grass between two traps
+    else do m = pick(menu, r); while (m[0] === st.prev);
+    s.type = m[0]; s.b = Math.min(stop, a + m[2] + r() * (m[3] - m[2]));
+    if (stop - s.b < 500) s.b = stop;
+  }
+  st.prev = s.type; st.pos = s.b; st.n++;
+  const len = s.b - s.a;
+  const trees = (o0, o1, dens, r0 = 40, r1 = 84) => {
+    for (let i = 0, n = len * (o1 - o0) / 9000 * dens; i < n; i++) {
+      const q = r0 + r() * (r1 - r0);
+      s.trees.push({ p: s.a + r() * len, off: o0 + q * .75 + r() * (o1 - o0), r: q, v: (r() * 7) | 0 });
+    }
+  };
+  switch (s.type) {
+    case 'gravel': case 'runoff': s.t0 = Math.min(120 + r() * 280, len * .4); s.t1 = Math.min(120 + r() * 280, len * .4); break;
+    case 'grass': s.mown = r() < .5; break;
+    case 'woods': trees(22, 900, 1); break;
+    case 'stand':
+      s.depth = s.main ? 205 : 140 + r() * 70; s.roof = s.main || r() < .62 ? .4 + r() * .12 : 0;
+      s.theme = THEMES[(r() * THEMES.length) | 0]; s.step = 105 + r() * 50;
+      s.name = s.main ? 'LIGHTS OUT AND AWAY WE GO' : STANDS[st.name++ % STANDS.length];
+      s.flags = [];
+      for (let p = s.a + 70 + r() * 80; p < s.b - 110; p += 80 + r() * 200) s.flags.push({ p, w: 24 + r() * 44, col: FANS[9 + ((r() * (FANS.length - 9)) | 0)] });
+      s.tifo = [];
+      if (!s.roof) for (let p = s.a + 150 + r() * 200; p < s.b - 200; p += 260 + r() * 300) s.tifo.push({ p, f: .25 + r() * .5, w: 40 + r() * 30, h: 26 + r() * 16, rot: (r() - .5) * .5, col: FLAGS[(r() * FLAGS.length) | 0] });
+      trees(s.depth + 75, 900, .8); break;
+    case 'boards':
+      s.ads = [];
+      for (let p = s.a + 60 + r() * 120; ;) {
+        const text = ADS[adOrder[st.ad % ADS.length]], w = 36 + text.length * 9.6;
+        if (p + w > s.b - 50) break;
+        s.ads.push({ p: p + w / 2, len: w, text, sch: (st.ad * 5) % SCHEMES.length }); st.ad++;
+        p += w + 60 + r() * 170;
+      }
+      trees(70, 900, .75); break;
+    case 'meadow': s.word = WORDS[st.word++ % WORDS.length]; trees(16, 60, .9, 14, 26); trees(240, 900, .5); break;
+    case 'camp':
+      s.tents = []; s.fires = [];
+      for (let i = 0, n = len / 34; i < n; i++) s.tents.push({ p: s.a + 40 + r() * (len - 80), off: 52 + r() * 250, v: (r() * 10) | 0 });
+      for (let i = 0, n = 1 + len / 500; i < n; i++) s.fires.push({ p: s.a + 80 + r() * (len - 160), off: 70 + r() * 200, ph: r() * 9 });
+      trees(40, 320, .12, 36, 60); trees(330, 900, .8); break;
+    case 'paddock':
+      s.trucks = [];
+      for (let p = s.a + 90, i = 0; p < s.b - 150; p += 40 + (r() < .22 ? 70 : 0), i++) s.trucks.push({ p, v: (i / 2) | 0, off: 224 + r() * 8 });
+      trees(345, 900, .7); break;
+  }
+  s.trees.sort((x, y) => x.r - y.r);
+  return s;
+}
+function segsIn(key, pBot, pTop) {
+  const st = streams[key];
+  while (st.pos < pTop + 200) st.segs.push(nextSeg(st));
+  while (st.segs.length > 1 && st.segs[0].b < pBot - 3000) st.segs.shift();
+  return st.segs;
+}
+const plans = {};
+function plan(n) {                                  // the one-off landmarks of lap n
+  if (!plans[n]) { const r = rng(n * 31 + 7), o = n * LAP; plans[n] = { drs: o + 19500 + r() * 4000, bridges: [{ p: o + 7500 + r() * 4500, i: n * 2 }, { p: o + 30000 + r() * 6000, i: n * 2 + 1 }] }; }
+  return plans[n];
+}
+
+/* sprites and patterns, rebuilt for the current scale */
+let SC = null;
+const glows = [];
+const PM = new DOMMatrix();
+const pat = (p, ax, ay, flip = 1) => { PM.a = flip / DPR; PM.d = 1 / DPR; PM.e = ax; PM.f = ay; p.setTransform(PM); return p; };   // pin a pattern to the world
+function spr(wu, hu, paint) {                       // a sprite painted in car units; .w/.h are its size in CSS px
+  const k = L.S * DPR, c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(wu * k)); c.height = Math.max(1, Math.round(hu * k));
+  const g = c.getContext('2d'); g.scale(c.width / wu, c.height / hu); paint(g, wu, hu);
+  c.w = wu * L.S; c.h = hu * L.S; return c;
+}
+function label(text, px, weight, color) {           // a cached line of text, drawn once
+  const key = text + '|' + px.toFixed(1) + weight + color;
+  let c = SC.text[key]; if (c) return c;
+  const font = `${weight} ${px}px ${FONT}`;
+  ctx.save(); ctx.font = font; const w = ctx.measureText(text).width + px * .5; ctx.restore();
+  c = document.createElement('canvas'); c.width = Math.ceil(w * DPR); c.height = Math.ceil(px * 1.3 * DPR);
+  const g = c.getContext('2d'); g.scale(DPR, DPR); g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = color; g.fillText(text, w / 2, px * .68);
+  c.w = w; c.h = px * 1.3; return SC.text[key] = c;
+}
+function stamp(c, x, y, rot, k = 1) { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.drawImage(c, -c.w * k / 2, -c.h * k / 2, c.w * k, c.h * k); ctx.restore(); }
+function dot(c, x, y, r, a) { ctx.globalAlpha = a; ctx.drawImage(c, x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+
+function buildScenery() {
+  const k = L.S * DPR, r = rng(91);
+  const tile = (wu, hu, paint) => ctx.createPattern(spr(wu, hu, paint), 'repeat');
+  const noise = (g, w, h, n, cols) => { for (let i = 0; i < n; i++) { g.fillStyle = cols[(r() * cols.length) | 0]; g.fillRect(r() * w, r() * h, 1.3, 1.3); } };
+  const glow = (rgb, a) => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(.45, `rgba(${rgb},${a * .3})`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return c; };
+  SC = { text: {}, pool: glow('255,240,214', .15), flash: glow('255,255,255', 1), fire: glow('255,150,50', .9), green: glow('46,229,122', .9) };
+
+  SC.gravel = tile(96, 96, (g, w, h) => {           // raked gravel
+    g.fillStyle = '#2b2823'; g.fillRect(0, 0, w, h);
+    noise(g, w, h, 700, ['rgba(255,236,205,.055)', 'rgba(255,236,205,.03)', 'rgba(0,0,0,.14)']);
+    g.fillStyle = 'rgba(0,0,0,.06)'; for (let x = 0; x < w; x += 8) g.fillRect(x, 0, 1.2, h);
+  });
+  SC.runoff = tile(180, 180, (g, w, h) => {         // asphalt run-off with abrasive stripes in timing-screen colours
+    g.fillStyle = '#1b1d22'; g.fillRect(0, 0, w, h);
+    noise(g, w, h, 900, ['rgba(255,255,255,.03)', 'rgba(0,0,0,.14)']);
+    for (const [off, lw, col] of [[0, 36, 'rgba(182,92,255,.12)'], [90, 12, 'rgba(46,229,122,.06)']]) {
+      g.strokeStyle = col; g.lineWidth = lw; g.beginPath();
+      for (let i = -1; i <= 1; i++) { g.moveTo(off + i * w - 40, h + 40); g.lineTo(off + i * w + w + 40, -40); }
+      g.stroke();
+    }
+  });
+  SC.mown = tile(160, 160, (g, w, h) => {           // diagonal mowing
+    g.strokeStyle = 'rgba(150,220,170,.035)'; g.lineWidth = 56; g.beginPath();
+    for (let i = -1; i <= 1; i++) { g.moveTo(i * w - 40, h + 40); g.lineTo(i * w + w + 40, -40); }
+    g.stroke();
+  });
+  SC.crowd = tile(96, 96, g => {                    // a block of seats, mostly taken
+    for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) {
+      const x = 3 + i * 6, y = 3 + j * 6;
+      if (r() < .13) { g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x - 1.6, y - 1.6, 3.2, 3.2); continue; }
+      g.fillStyle = FANS[(r() * r() * FANS.length) | 0]; g.beginPath(); g.arc(x + r() - .5, y + r() - .5, 1.7 + r() * .6, 0, TAU); g.fill();
+    }
+  });
+  SC.tyres = tile(15, 150, g => {                   // tyre wall, three deep, with a painted block now and then
+    g.fillStyle = '#07080a'; g.fillRect(0, 0, 15, 150);
+    for (let j = 0; j < 30; j++) for (let i = 0; i < 3; i++) {
+      const x = 2.5 + i * 5, y = 2.5 + j * 5;
+      g.fillStyle = j > 23 ? '#7d1b20' : j > 17 ? '#8f8d86' : '#17191d'; g.beginPath(); g.arc(x, y, 2.35, 0, TAU); g.fill();
+      g.fillStyle = '#050506'; g.beginPath(); g.arc(x, y, 1, 0, TAU); g.fill();
+    }
+  });
+  SC.trees = Array.from({ length: 7 }, (_, i) => spr(210, 210, g => {   // canopies from above, lit from the top left
+    const [dk, md, lt] = GREENS[i % GREENS.length], lobes = [], n = 6 + (i % 3);
+    for (let q = 0; q < n; q++) { const a = q / n * TAU + r() * .6, d = 32 + r() * 12; lobes.push([100 + Math.cos(a) * d, 97 + Math.sin(a) * d, 25 + r() * 11]); }
+    lobes.sort((a, b) => (b[0] + b[1]) - (a[0] + a[1])); lobes.push([98, 95, 40]);
+    const blob = new Path2D(); for (const [x, y, q] of lobes) { blob.moveTo(x + q, y); blob.arc(x, y, q, 0, TAU); }
+    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 9 * k; g.shadowOffsetX = 7 * k; g.shadowOffsetY = 12 * k; g.fillStyle = dk; g.fill(blob); g.restore();
+    for (const [x, y, q] of lobes) {
+      const gr = g.createRadialGradient(x - q * .38, y - q * .42, q * .05, x, y, q);
+      gr.addColorStop(0, lt); gr.addColorStop(.55, md); gr.addColorStop(1, dk);
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, q, 0, TAU); g.fill();
+    }
+  }));
+  SC.tents = Array.from({ length: 10 }, (_, i) => spr(44, 44, g => {
+    g.translate(22, 22); g.rotate(r() * 1.57);
+    if (i > 7) {                                    // a camper van
+      g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 4 * k; g.shadowOffsetX = 2 * k; g.shadowOffsetY = 4 * k; g.fillStyle = i > 8 ? '#3b4048' : '#cfd2d6'; g.fill(rr(-8, -17, 16, 34, 3)); g.restore();
+      g.fillStyle = '#0c0d10'; g.fill(rr(-6.5, -14, 13, 5, 1.5)); return;
+    }
+    const col = TENTS[i % TENTS.length];
+    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 4 * k; g.shadowOffsetX = 2 * k; g.shadowOffsetY = 4 * k; g.fillStyle = col; g.fillRect(-11, -11, 22, 22); g.restore();
+    for (const [x0, y0, x1, y1, l] of [[-1, -1, 1, -1, .2], [1, -1, 1, 1, -.25], [1, 1, -1, 1, -.42], [-1, 1, -1, -1, 0]]) {
+      g.fillStyle = l > 0 ? mix(col, '#ffffff', l) : mix(col, '#000000', -l);
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(x0 * 11, y0 * 11); g.lineTo(x1 * 11, y1 * 11); g.closePath(); g.fill();
+    }
+  }));
+}
+if (document.fonts) document.fonts.addEventListener('loadingdone', () => { if (SC) SC.text = {}; });
+
+/* the pit lane: peels off the track, runs behind the pit wall, rejoins */
+function pitPath(s, Y) {
+  const { cx, S, z0, zo } = L, X = d => cx + d, rh = L.roadHalf - 2;
+  const li = Math.max(z0 + 16 * S, zo - 150 * S), lo = zo - 2 * S, a = s.a, b = s.b;
+  ctx.beginPath();
+  ctx.moveTo(X(rh), Y(a));
+  ctx.bezierCurveTo(X(rh), Y(a + 300), X(lo), Y(a + 240), X(lo), Y(a + 560));
+  ctx.lineTo(X(lo), Y(b - 560));
+  ctx.bezierCurveTo(X(lo), Y(b - 240), X(rh), Y(b - 300), X(rh), Y(b));
+  ctx.lineTo(X(rh), Y(b - 280));
+  ctx.bezierCurveTo(X(rh), Y(b - 480), X(li), Y(b - 460), X(li), Y(b - 680));
+  ctx.lineTo(X(li), Y(a + 680));
+  ctx.bezierCurveTo(X(li), Y(a + 460), X(rh), Y(a + 480), X(rh), Y(a + 280));
+  ctx.closePath();
+  return [li, lo];
+}
+
+/* ground level: run-off, barriers, and everything beyond them */
+function drawTrackside(t) {
+  const { cx, S, z0, zo } = L, base = L.gridTop + world * S, hw = W / 2;
+  const Y = p => base - p * S;
+  const pTop = base / S + 340, pBot = (base - H) / S - 340;
+  const seen = s => s.b > pBot && s.a < pTop;
+  glows.length = 0;
+  for (const sd of [-1, 1]) {
+    const side = sd < 0 ? 'L' : 'R', X = d => cx + sd * d, quarter = sd * Math.PI / 2;
+    const box = (d0, d1, y, h) => ctx.fillRect(sd > 0 ? cx + d0 : cx - d1, y, d1 - d0, h);
+    const inner = segsIn(side + '-in', pBot, pTop), outer = segsIn(side + '-out', pBot, pTop);
+
+    // ---- run-off ----
+    for (const s of inner) {
+      if (!seen(s)) continue;
+      const dIn = z0 + 16 * S, dOut = zo - 3 * S;
+      if (s.type === 'grass') { if (s.mown) { ctx.fillStyle = pat(SC.mown, X(dIn), Y(s.b), -sd); box(z0, zo, Y(s.b), (s.b - s.a) * S); } }
+      else if (s.type === 'pit') {
+        const [li, lo] = pitPath(s, Y), o = s.b - ZB, g0 = Y(o + 1230), gh = 2360 * S, bay = gh / cars.length;
+        ctx.fillStyle = '#212329'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(X(li + 5 * S), Y(s.b - 700), 1.5, (s.b - s.a - 1400) * S);       // fast-lane line
+        cars.forEach((c, i) => {                                                                                            // each lab's pit box
+          ctx.strokeStyle = rgba(c.tint, .5); ctx.lineWidth = 1.5;
+          for (const f of [.12, .56]) ctx.strokeRect(X(lo - 44 * S), g0 + (i + f) * bay, 40 * S, bay * .32);
+        });
+        ctx.fillStyle = '#3b3f47'; ctx.fillRect(X(li - 7 * S), Y(s.b - 690), 5 * S, (s.b - s.a - 1380) * S);                 // pit wall
+        ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(X(li - 7 * S), Y(s.b - 690), 1, (s.b - s.a - 1380) * S);
+      } else if (dOut - dIn > 10) {
+        const y0 = Y(s.a + 30), y1 = Y(s.b - 30);
+        ctx.beginPath();
+        ctx.moveTo(X(dOut), y0); ctx.quadraticCurveTo(X(dIn), y0, X(dIn), y0 - s.t0 * S);
+        ctx.lineTo(X(dIn), y1 + s.t1 * S); ctx.quadraticCurveTo(X(dIn), y1, X(dOut), y1); ctx.closePath();
+        ctx.fillStyle = pat(s.type === 'gravel' ? SC.gravel : SC.runoff, X(dIn), y1, -sd); ctx.fill();
+        ctx.strokeStyle = s.type === 'gravel' ? 'rgba(255,236,205,.07)' : 'rgba(255,255,255,.13)'; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+    }
+
+    // ---- beyond the barrier ----
+    ctx.fillStyle = 'rgba(8,11,11,.45)'; box(zo + 11 * S, zo + 26 * S, 0, H);                       // perimeter path
+    for (const s of outer) {
+      if (!seen(s)) continue;
+      const len = s.b - s.a;
+      if (s.type === 'stand') {
+        const f0 = zo + 30 * S, D = s.depth * S, yt = Y(s.b - 30), h = (len - 60) * S, x = sd > 0 ? cx + f0 : cx - f0 - D;
+        ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(x + 6 * S, yt + 10 * S, D, h);
+        ctx.fillStyle = '#20232a'; ctx.fillRect(x - 3 * S, yt - 3 * S, D + 6 * S, h + 6 * S);
+        ctx.fillStyle = s.theme; ctx.fillRect(x, yt, D, h);
+        ctx.fillStyle = pat(SC.crowd, x, yt); ctx.fillRect(x, yt, D, h);
+        ctx.fillStyle = '#15171c'; box(f0 + D * .3, f0 + D * .3 + 5 * S, yt, h);                    // walkway and stairs
+        for (let p = s.a + 30 + s.step * .5; p < s.b - 40; p += s.step) ctx.fillRect(x, Y(p) - 3 * S, D, 6 * S);
+        const lg = ctx.createLinearGradient(X(f0), 0, X(f0 + D), 0);                                // floodlit at the front, dim at the back
+        lg.addColorStop(0, 'rgba(255,240,214,.1)'); lg.addColorStop(.3, 'rgba(8,10,14,.14)'); lg.addColorStop(.6, 'rgba(8,10,14,.24)'); lg.addColorStop(1, 'rgba(8,10,14,.5)');
+        ctx.fillStyle = lg; ctx.fillRect(x, yt, D, h);
+        for (const f of s.flags) { ctx.fillStyle = f.col; box(f0 - 2 * S, f0 + 4 * S, Y(f.p), f.w * S); }      // banners on the front rail
+        for (const f of s.tifo) { ctx.save(); ctx.translate(X(f0 + D * f.f), Y(f.p)); ctx.rotate(f.rot); const fw = f.h * S, fh = f.w * S;          // a big flag passed over the crowd
+          ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(-fw / 2 + 2 * S, -fh / 2 + 3 * S, fw, fh);
+          ctx.fillStyle = f.col; ctx.fillRect(-fw / 2, -fh / 2, fw, fh);
+          ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(-fw / 2, -fh * .1, fw, fh * .2);
+          ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-fw / 2, -fh / 2, fw * .3, fh); ctx.restore(); }
+        const seats = s.roof ? 1 - s.roof : 1;
+        if (!reduced) {                                                                             // camera flashes
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0, n = Math.ceil(len / 200); i < n; i++) {
+            const q = t * 6 + i * .618 + s.id, tb = Math.floor(q), f = q - tb;
+            if (f > .45 || hash(s.id, i, tb) > .5) continue;
+            dot(SC.flash, X(f0 + (.04 + hash(tb, i, 1) * (seats - .08)) * D), Y(s.a + 40 + hash(tb, i, 2) * (len - 80)), (7 + 9 * f) * S, 1 - f * 2.2);
+          }
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        if (s.roof) {
+          const r0 = f0 + D * seats, r1 = f0 + D + 7 * S;
+          ctx.fillStyle = 'rgba(0,0,0,.4)'; box(r0 - 9 * S, r0, yt, h);
+          ctx.fillStyle = '#171a20'; box(r0, r1, yt - 5 * S, h + 10 * S);
+          ctx.fillStyle = 'rgba(255,255,255,.035)';
+          for (let y = yt + ((Math.max(0, -yt) / (28 * S)) | 0) * 28 * S; y < Math.min(H, yt + h); y += 28 * S) box(r0, r1, y, 1.5);
+          ctx.fillStyle = 'rgba(255,255,255,.2)'; box(r0, r0 + 1.5 * S, yt - 5 * S, h + 10 * S);
+          const c = label(s.name, Math.min((r1 - r0) * .46, 46 * S), 'italic 800', 'rgba(255,255,255,.4)');
+          stamp(c, X((r0 + r1) / 2), yt + h / 2, quarter, Math.min(1, h * .84 / c.w));
+        }
+      } else if (s.type === 'boards') {
+        for (const ad of s.ads) {
+          const y = Y(ad.p), h = ad.len * S; if (y + h / 2 < -20 || y - h / 2 > H + 20) continue;
+          const [bg, fg] = SCHEMES[ad.sch], d0 = zo + 8 * S, d1 = zo + 38 * S;
+          ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(X((d0 + d1) / 2) - 11 * S, y - h / 2 + 8 * S, 30 * S, h);
+          ctx.fillStyle = bg; box(d0, d1, y - h / 2, h);
+          ctx.fillStyle = 'rgba(255,255,255,.22)'; box(d1 - 1.5 * S, d1, y - h / 2, h);
+          const c = label(ad.text, 19 * S, 'italic 700', fg);
+          stamp(c, X((d0 + d1) / 2), y, quarter, Math.min(1, (h - 12 * S) / c.w));
+        }
+      } else if (s.type === 'meadow') {
+        if (L.words) {                                                                              // slogans painted on the grass
+          const c = label(s.word, clamp(W * .05, 60, 84), 'italic 800', 'rgba(214,255,226,.085)'), k = Math.min(1, len * S * .9 / c.w);
+          stamp(c, X(Math.max(zo + c.h * k * .5 + 34 * S, Math.min(W * .39, L.roadHalf + 460))), Y((s.a + s.b) / 2), quarter, k);
+        }
+      } else if (s.type === 'camp') {
+        for (const o of s.tents) {
+          const y = Y(o.p), c = SC.tents[o.v]; if (y < -40 || y > H + 40) continue;
+          ctx.drawImage(c, X(zo + o.off * S) - c.w / 2, y - c.h / 2, c.w, c.h);
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        for (const o of s.fires) dot(SC.fire, X(zo + o.off * S), Y(o.p), 30 * S, reduced ? .6 : .5 + .22 * Math.sin(t * 9 + o.ph) + .12 * Math.sin(t * 23 + o.ph));
+        ctx.globalCompositeOperation = 'source-over';
+      } else if (s.type === 'paddock') {
+        const d0 = zo + 4 * S, D = 150 * S, x = sd > 0 ? cx + d0 : cx - d0 - D, yt = Y(s.b - 20), h = (len - 40) * S, bay = h / cars.length;
+        ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(x + 6 * S, yt + 10 * S, D, h);
+        ctx.fillStyle = '#181b21'; ctx.fillRect(x, yt, D, h);
+        cars.forEach((c, i) => {                                                                    // a garage per lab, in its colours
+          ctx.fillStyle = c.tint; box(d0, d0 + 9 * S, yt + i * bay + 5 * S, bay - 10 * S);
+          ctx.fillStyle = 'rgba(255,255,255,.06)'; box(d0 + 9 * S, d0 + D, yt + i * bay, 1.5);
+          ctx.fillStyle = '#262a32'; for (const f of [.25, .75]) box(d0 + D * .72, d0 + D * .86, yt + (i + f) * bay - 14 * S, 28 * S);
+        });
+        ctx.fillStyle = 'rgba(255,255,255,.14)'; box(d0 + D - 1.5 * S, d0 + D, yt, h);
+        const c = label('PIT LANE · BOX BOX BOX', 44 * S, 'italic 800', 'rgba(255,255,255,.3)');
+        stamp(c, X(d0 + D * .4), yt + h / 2, quarter);
+        for (const o of s.trucks) {                                                                 // the transporters behind
+          const y = Y(o.p), tx = X(zo + o.off * S), col = cars[o.v % cars.length].tint; if (y < -60 || y > H + 60) continue;
+          const nose = tx - sd * 50 * S, cab = sd > 0 ? nose : nose - 20 * S;                      // cab faces the garages
+          ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(tx - 45 * S, y - 8 * S, 100 * S, 26 * S);
+          ctx.fillStyle = '#7f858d'; ctx.fillRect(tx - 50 * S, y - 13 * S, 100 * S, 26 * S);
+          ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(tx - 50 * S, y - 13 * S, 100 * S, 1.5);
+          ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let i = -2; i <= 2; i++) ctx.fillRect(tx + i * 15 * S, y - 13 * S, 1.5, 26 * S);
+          ctx.fillStyle = col; ctx.fillRect(tx - 50 * S, y + 6 * S, 100 * S, 4 * S);
+          ctx.fillStyle = mix(col, '#000000', .35); ctx.fillRect(cab, y - 11 * S, 20 * S, 22 * S);
+          ctx.fillStyle = '#0b0c0f'; ctx.fillRect(sd > 0 ? cab + 2 * S : cab + 13 * S, y - 9 * S, 5 * S, 18 * S);
+        }
+        for (let p = s.a + 200; p < s.b; p += 500) glows.push([X(zo - 70 * S), Y(p), 240]);
+      }
+    }
+    for (const s of outer) {
+      if (!seen(s)) continue;
+      for (const o of s.trees) {
+        const y = Y(o.p), k = o.r / 72, q = o.r * S, d = zo + o.off * S;
+        if (y < -q * 1.5 || y > H + q * 1.5 || d - q > hw) continue;
+        const c = SC.trees[o.v]; ctx.drawImage(c, X(d) - 100 * S * k, y - 97 * S * k, c.w * k, c.h * k);
+      }
+    }
+
+    // ---- the barrier itself ----
+    for (const s of inner) {
+      if (!seen(s) || (s.type !== 'gravel' && s.type !== 'runoff')) continue;
+      const y1 = Y(s.b - 70), h = (s.b - s.a - 140) * S, x = sd > 0 ? cx + zo - 17 * S : cx - zo + 2 * S;
+      ctx.fillStyle = pat(SC.tyres, x, y1); ctx.fillRect(x, y1, 15 * S, h);
+    }
+    for (const s of outer) {
+      if (!seen(s) || s.type === 'paddock') continue;
+      const y1 = Y(s.b), h = (s.b - s.a) * S + 1;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; box(zo + 3.5 * S, zo + 7 * S, y1, h);
+      ctx.fillStyle = '#59606a'; box(zo, zo + 3.5 * S, y1, h);
+      ctx.fillStyle = 'rgba(225,232,240,.5)'; ctx.fillRect(X(zo) - (sd < 0 ? 1 : 0), y1, 1, h);
+      if (s.type === 'stand' || s.type === 'camp' || s.type === 'meadow') {                         // catch fencing
+        ctx.fillStyle = 'rgba(190,200,210,.07)'; box(zo + 4 * S, zo + 10 * S, y1, h);
+        ctx.strokeStyle = 'rgba(200,208,216,.4)'; ctx.lineWidth = 4 * S; ctx.setLineDash([2 * S, 38 * S]);
+        ctx.beginPath(); ctx.moveTo(X(zo + 9.5 * S), y1); ctx.lineTo(X(zo + 9.5 * S), y1 + h); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(200,208,216,.3)'; ctx.fillRect(X(zo + 9.5 * S), y1, 1, h);
+      }
+    }
+    // marshal posts
+    for (let m = Math.floor(pBot / 2600); m <= pTop / 2600; m++) {
+      const p = m * 2600 + (sd > 0 ? 900 : 2200), o = Math.round(p / LAP) * LAP, y = Y(p), x = X(zo - 13 * S);
+      if ((p > o + ZA && p < o + ZB) || y < -60 || y > H + 60) continue;
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x - 8 * S, y - 10 * S, 22 * S, 30 * S);
+      ctx.fillStyle = '#b9541d'; ctx.fillRect(x - 11 * S, y - 15 * S, 22 * S, 30 * S);
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(x - 11 * S, y - 15 * S, 22 * S, 2 * S);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x - S, y - 15 * S, 2 * S, 30 * S);
+      const lx = X(zo - 31 * S);                                                                    // light panel: track is green
+      ctx.fillStyle = '#0b0d10'; ctx.fillRect(lx - 4 * S, y - 9 * S, 8 * S, 18 * S);
+      ctx.fillStyle = '#2ee57a'; ctx.fillRect(lx - 2.2 * S, y - 7 * S, 4.4 * S, 14 * S);
+      dot(SC.green, lx, y, 17 * S, .5);
+      ctx.fillStyle = '#e8762b'; for (const [dx, dy] of [[-14, 26], [-20, -24]]) { ctx.beginPath(); ctx.arc(x + sd * dx * S, y + dy * S, 2.6 * S, 0, TAU); ctx.fill(); }
+    }
+    // floodlight masts
+    for (let m = Math.floor(pBot / 1500); m <= pTop / 1500; m++) {
+      const p = m * 1500 + (sd > 0 ? 0 : 750), o = Math.round(p / LAP) * LAP, y = Y(p), x0 = X(zo + 14 * S), x1 = X(zo - 17 * S);
+      if (sd > 0 && p > o - 1200 && p < o + 1300) continue;                                         // the pit building lights its own lane
+      glows.push([X(Math.max(z0 + 40 * S, zo - 150 * S)), y, 340]);
+      if (y < -60 || y > H + 60) continue;
+      ctx.strokeStyle = '#3d424b'; ctx.lineWidth = 2.5 * S; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.fillStyle = '#2b2f36'; ctx.beginPath(); ctx.arc(x0, y, 5 * S, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff3d6'; ctx.fillRect(x1 - 3 * S, y - 13 * S, 6 * S, 26 * S);
+      dot(SC.flash, x1, y, 30 * S, .42);
+    }
+  }
+  if (L.dim) { ctx.fillStyle = `rgba(7,11,9,${L.dim})`; ctx.fillRect(0, 0, cx - zo + 18 * S, H); ctx.fillRect(cx + zo - 18 * S, 0, hw, H); }
+}
+
+/* overhead: gantries and footbridges, drawn over the cars */
+function drawOverhead() {
+  const { cx, S, z0, zo } = L, base = L.gridTop + world * S, n0 = Math.round(world / LAP);
+  const truss = y => {
+    const x0 = cx - z0 - 10 * S, x1 = cx + z0 + 10 * S, h = 6 * S;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x0 + 5 * S, y - h + 10 * S, x1 - x0, h * 2);
+    ctx.strokeStyle = 'rgba(196,202,210,.9)'; ctx.lineWidth = Math.max(1, 1.6 * S); ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y - h); ctx.lineTo(x1, y - h); ctx.moveTo(x0, y + h); ctx.lineTo(x1, y + h); ctx.stroke();
+    ctx.strokeStyle = 'rgba(196,202,210,.55)'; ctx.lineWidth = Math.max(.8, S);
+    ctx.beginPath(); ctx.moveTo(x0, y + h);
+    for (let x = x0, i = 0, n = Math.round((x1 - x0) / (h * 2)), dx = (x1 - x0) / n; i < n; i++) { ctx.lineTo(x + dx / 2, y - h); ctx.lineTo(x += dx, y + h); }
+    ctx.stroke();
+    ctx.fillStyle = '#343941'; ctx.fillRect(x0 - 5 * S, y - 8 * S, 10 * S, 16 * S); ctx.fillRect(x1 - 5 * S, y - 8 * S, 10 * S, 16 * S);
+    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x0 - 5 * S, y - 8 * S, 10 * S, 1.5); ctx.fillRect(x1 - 5 * S, y - 8 * S, 10 * S, 1.5);
+  };
+  const off = y => y < -90 * S || y > H + 90 * S;
+  for (let n = Math.max(0, n0 - 1); n <= n0 + 1; n++) {
+    const pl = plan(n);
+    let y = base - (n * LAP + 66) * S;
+    if (!off(y)) {                                                                                  // start gantry: the five lights
+      truss(y);
+      for (let i = 0; i < 5; i++) {
+        const x = cx + (i - 2) * 25 * S, on = n === 0 && i < intro.lit;
+        ctx.fillStyle = '#0b0c0f'; ctx.fill(rr(x - 9 * S, y - 7 * S, 18 * S, 14 * S, 3 * S));
+        ctx.fillStyle = on ? '#ff2a1f' : '#3a1517'; ctx.beginPath(); ctx.arc(x, y, 4.2 * S, 0, TAU); ctx.fill();
+        if (on) dot(SC.flash, x, y, 13 * S, .5);
+      }
+    }
+    y = base - pl.drs * S;
+    if (!off(y)) {                                                                                  // DRS detection point
+      truss(y);
+      ctx.fillStyle = '#0c7a40'; ctx.fillRect(cx - 50 * S, y - 9 * S, 100 * S, 18 * S);
+      ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1; ctx.strokeRect(cx - 50 * S, y - 9 * S, 100 * S, 18 * S);
+      stamp(label('DRS DETECTION', 12.5 * S, '700', '#ffffff'), cx, y);
+    }
+    for (const b of pl.bridges) {                                                                   // footbridge with a banner
+      y = base - b.p * S; if (off(y)) continue;
+      const h = 22 * S, [bg, fg] = SCHEMES[b.i % 4], bw = z0 + 14 * S;
+      ctx.fillStyle = 'rgba(0,0,0,.34)'; ctx.fillRect(0, y - h + 13 * S, W, h * 2);
+      for (const sd of [-1, 1]) { ctx.fillStyle = '#23272e'; ctx.fillRect(cx + sd * (zo + 22 * S) - 30 * S, y - 40 * S, 60 * S, 80 * S); ctx.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 6; i++) ctx.fillRect(cx + sd * (zo + 22 * S) - 30 * S, y - 38 * S + i * 13 * S, 60 * S, 1.5); }
+      const dg = ctx.createLinearGradient(0, y - h, 0, y + h); dg.addColorStop(0, '#272b33'); dg.addColorStop(1, '#191c22');
+      ctx.fillStyle = dg; ctx.fillRect(0, y - h, W, h * 2);
+      ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(0, y - h, W, 1.5); ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(0, y + h - 1.5, W, 1.5);
+      ctx.fillStyle = bg; ctx.fillRect(cx - bw, y - 15 * S, bw * 2, 30 * S);
+      const c = label(BRIDGES[b.i % BRIDGES.length], 23 * S, 'italic 800', fg);
+      stamp(c, cx, y, 0, Math.min(1, (bw * 2 - 12 * S) / c.w));
+    }
+  }
+}
 
 /* ---------- intro: five lights, then away we go ---------- */
 const lights = [...document.querySelectorAll('#stamp .lights i')];
@@ -752,20 +1221,8 @@ function draw(t) {
   ctx.fillStyle = 'rgba(0,0,0,.2)';
   for (let y = (scroll % (band * 2)) - band * 2; y < H; y += band * 2) ctx.fillRect(0, y, W, band);
 
-  // slogans painted on the run-off (wide screens only)
-  if (L.words) {
-    const cell = 1500;
-    ctx.save();
-    ctx.font = `italic 800 ${clamp(W * .05, 60, 84)}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(214,255,226,.075)';
-    for (let k = Math.floor((scroll - H) / cell) - 1; k <= Math.floor(scroll / cell) + 1; k++) {
-      if (k < 1) continue;
-      const y = scroll - k * cell + cell / 2, left = k % 2 === 0;
-      ctx.save(); ctx.translate(cx + (left ? -1 : 1) * Math.min(W * .39, roadHalf + 460), y); ctx.rotate(left ? -Math.PI / 2 : Math.PI / 2);
-      ctx.fillText(WORDS[k % WORDS.length], 0, 0); ctx.restore();
-    }
-    ctx.restore();
-  }
+  // run-off, barriers, grandstands, trees: the world beside the road
+  drawTrackside(t);
 
   // verge + asphalt
   ctx.fillStyle = '#0a1a13'; ctx.fillRect(rl - kerbW - 9, 0, rw + kerbW * 2 + 18, H);
@@ -788,9 +1245,13 @@ function draw(t) {
       for (const dx of [-sep / 2, sep / 2]) { ctx.beginPath(); ctx.moveTo(x0 + dx, y0); ctx.quadraticCurveTo(x0 + dx + bend, y0 + len / 2, x0 + dx + bend * 1.7, y0 + len); ctx.stroke(); }
     }
   }
-  // the grid we launched from
-  const gy = L.gridTop + scroll;
-  if (gy < H + 400) {
+  // the grid we launched from, and the start line each time it comes round again
+  const lap = Math.round(world / LAP);
+  for (let n = Math.max(0, lap - 1); n <= lap + 1; n++) {
+    const dy = L.gridTop + (world - plan(n).drs) * L.S;                 // DRS detection line
+    if (dy > -10 && dy < H + 10) { ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(rl, dy, rw, 3); }
+    const gy = L.gridTop + (world - n * LAP) * L.S;
+    if (gy < -400 || gy > H + 400) continue;
     ctx.fillStyle = 'rgba(255,255,255,.9)';
     const sq = rw / 16;
     for (let r2 = 0; r2 < 2; r2++) for (let q = 0; q < 16; q++) if ((q + r2) % 2 === 0) ctx.fillRect(rl + q * sq, gy - 22 + r2 * sq - sq, sq, sq);
@@ -810,11 +1271,29 @@ function draw(t) {
     ctx.fillStyle = '#eceae4'; ctx.fillRect(rl - kerbW, y + bl, kerbW, bl); ctx.fillRect(rl + rw, y, kerbW, bl);
   }
   ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(rl - kerbW, 0, 2, H); ctx.fillRect(rl + rw + kerbW - 2, 0, 2, H);
+  // where the pit lane leaves and rejoins, it cuts through the kerb
+  for (const s of streams['R-in'].segs) {
+    if (s.type !== 'pit') continue;
+    const Y = p => L.gridTop + (world - p) * L.S;
+    for (const [p0, p1] of [[s.a, s.a + 300], [s.b - 300, s.b]]) {
+      if (Y(p0) < 0 || Y(p1) > H) continue;
+      ctx.save(); ctx.beginPath(); ctx.rect(cx + roadHalf - 2, Y(p1), kerbW + 12, Y(p0) - Y(p1)); ctx.clip();
+      pitPath(s, Y); ctx.fillStyle = '#212329'; ctx.fill(); ctx.restore();
+    }
+  }
 
-  // floodlight pool
+  // floodlight pool, and the pools under the trackside masts
   const fl = ctx.createRadialGradient(cx, H * .42, 0, cx, H * .42, Math.max(H * .62, 380));
   fl.addColorStop(0, 'rgba(255,244,224,.085)'); fl.addColorStop(1, 'rgba(255,244,224,0)');
   ctx.fillStyle = fl; ctx.fillRect(0, 0, W, H);
+  for (const [x, y, r] of glows) { const q = r * L.S; if (y > -q && y < H + q) ctx.drawImage(SC.pool, x - q, y - q, q * 2, q * 2); }
+  // where scenery has to share the side with the labels, each label gets a darker plate
+  if (L.dim) for (const c of cars) for (const [o, x0, x1] of [[c.oL, cx - L.edge, cx - L.edge - L.lw], [c.oR, cx + L.edge, cx + L.edge + L.lw]]) {
+    if (o < .01 || !c.lh) continue;
+    const pg = ctx.createLinearGradient(x0, 0, x1, 0);           // solid by the road, easing off outwards, like the label's own backdrop
+    pg.addColorStop(0, `rgba(7,9,11,${(.86 * o).toFixed(3)})`); pg.addColorStop(.7, `rgba(7,9,11,${(.8 * o).toFixed(3)})`); pg.addColorStop(1, `rgba(7,9,11,${(.5 * o).toFixed(3)})`);
+    ctx.fillStyle = pg; ctx.fillRect(Math.min(x0, x1), c.by - 1 + (c.ly || 0), L.lw, c.lh);
+  }
 
   // ---- timing graphics ----
   const hud = intro.hud;
@@ -828,28 +1307,6 @@ function draw(t) {
       ctx.lineWidth = 2;
       if (aL > 0) { ctx.strokeStyle = rgba(c.tint, .85 * hud * aL); ctx.beginPath(); ctx.moveTo(cx + c.x, c.by); ctx.lineTo(cx - L.edge, c.by); ctx.stroke(); }
       if (aR > 0) { ctx.strokeStyle = rgba(c.tint, .85 * hud * aR); ctx.beginPath(); ctx.moveTo(cx + c.x, c.by); ctx.lineTo(cx + L.edge, c.by); ctx.stroke(); }
-    }
-    // interval callouts in the empty road
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineCap = 'butt';
-    for (const c of cars) {
-      const a = c.ahead; if (!a || c.by > H + carLen) continue;
-      const y0 = a.by + carLen + 10, y1 = c.by - 9, free = y1 - y0;
-      const al = smooth(18, 36, free) * hud; if (al < .01) continue;
-      const mid = (y0 + y1) / 2, fs = clamp(free * .36, 14, L.mobile ? 24 : 32), half = fs * .68;
-      const cap = free > fs + 74;
-      ctx.strokeStyle = `rgba(255,255,255,${.6 * al})`; ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      ctx.moveTo(cx - 9, y0); ctx.lineTo(cx + 9, y0); ctx.moveTo(cx - 9, y1); ctx.lineTo(cx + 9, y1);
-      const up = mid - half - (cap ? 15 : 0);
-      if (up - y0 > 3) { ctx.moveTo(cx, y0); ctx.lineTo(cx, up); }
-      if (y1 - (mid + half) > 3) { ctx.moveTo(cx, mid + half); ctx.lineTo(cx, y1); }
-      ctx.stroke();
-      ctx.font = `italic 700 ${fs}px ${FONT}`;
-      ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 8 * DPR;
-      ctx.fillStyle = `rgba(255,255,255,${.96 * al})`;
-      ctx.fillText('+' + c.int.toFixed(3), cx, mid + 1);
-      if (cap) { ctx.font = `600 10px ${FONT}`; ctx.fillStyle = `rgba(255,255,255,${.6 * al})`; ctx.fillText('I N T E R V A L', cx, mid - half - 5); }
-      ctx.shadowBlur = 0;
     }
   }
 
@@ -879,10 +1336,44 @@ function draw(t) {
     ctx.restore();
   }
 
+  // gantries and bridges pass over the cars, but never over the gap numbers
+  drawOverhead();
+
+  if (hud > .01) {
+    // interval callouts in the empty road
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineCap = 'butt';
+    for (const c of cars) {
+      const a = c.ahead; if (!a || c.by > H + carLen) continue;
+      const y0 = a.by + carLen + 10, y1 = c.by - 9, free = y1 - y0;
+      const al = smooth(18, 36, free) * hud; if (al < .01) continue;
+      const mid = (y0 + y1) / 2, fs = clamp(free * .36, 14, L.mobile ? 24 : 32), half = fs * .68;
+      const cap = free > fs + 74;
+      ctx.strokeStyle = `rgba(255,255,255,${.6 * al})`; ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(cx - 9, y0); ctx.lineTo(cx + 9, y0); ctx.moveTo(cx - 9, y1); ctx.lineTo(cx + 9, y1);
+      const up = mid - half - (cap ? 15 : 0);
+      if (up - y0 > 3) { ctx.moveTo(cx, y0); ctx.lineTo(cx, up); }
+      if (y1 - (mid + half) > 3) { ctx.moveTo(cx, mid + half); ctx.lineTo(cx, y1); }
+      ctx.stroke();
+      ctx.font = `italic 700 ${fs}px ${FONT}`;
+      ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 8 * DPR;
+      ctx.fillStyle = `rgba(255,255,255,${.96 * al})`;
+      ctx.fillText('+' + c.int.toFixed(3), cx, mid + 1);
+      if (cap) { ctx.font = `600 10px ${FONT}`; ctx.fillStyle = `rgba(255,255,255,${.6 * al})`; ctx.fillText('I N T E R V A L', cx, mid - half - 5); }
+      ctx.shadowBlur = 0;
+    }
+  }
+
   // header / footer shade + vignette
   let sh = ctx.createLinearGradient(0, 0, 0, 150);
   sh.addColorStop(0, 'rgba(8,10,12,.82)'); sh.addColorStop(1, 'rgba(8,10,12,0)');
   ctx.fillStyle = sh; ctx.fillRect(0, 0, W, 150);
+  for (const b of L.corners) {                     // a little extra night behind the wordmark and the date, now that things pass under them
+    const rx = b.width * .5 + 70, ry = b.height * .5 + 46;
+    ctx.save(); ctx.translate(b.left + b.width / 2, b.top + b.height / 2); ctx.scale(rx, ry);
+    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, 1); cg.addColorStop(0, 'rgba(8,10,12,.72)'); cg.addColorStop(.55, 'rgba(8,10,12,.6)'); cg.addColorStop(1, 'rgba(8,10,12,0)');
+    ctx.fillStyle = cg; ctx.fillRect(-1, -1, 2, 2); ctx.restore();
+  }
   sh = ctx.createLinearGradient(0, H - 150, 0, H);
   sh.addColorStop(0, 'rgba(8,10,12,0)'); sh.addColorStop(.72, 'rgba(8,10,12,.8)'); sh.addColorStop(1, 'rgba(8,10,12,.92)');
   ctx.fillStyle = sh; ctx.fillRect(0, H - 150, W, 150);
@@ -910,7 +1401,7 @@ function updateLabels() {
     c.oL = oL; c.oR = oR;
   }
   // two labels on the same side never stack on top of each other: the one behind slides down
-  if (!L.lh) L.lh = Math.max(...cars.map(c => c.els.left.el.offsetHeight)) + 6;
+  if (!L.lh) L.lh = Math.max(...cars.map(c => c.lh = c.els.left.el.offsetHeight)) + 6;
   for (const key of ['oL', 'oR']) {
     let floor = -1e9;
     for (const c of cars.filter(c => c[key] > .5).sort((a, b) => a.by - b.by)) {
@@ -933,7 +1424,8 @@ function frame(now) {
   const t = now / 1000, dt = Math.min(.05, Math.max(.001, t - last)); last = t;
   stepIntro(t);
   stepAnim(now);
-  scroll += TUNING.speed * (reduced ? .35 : 1) * intro.speedF * dt;
+  const step = TUNING.speed * (reduced ? .35 : 1) * intro.speedF * dt;
+  scroll += step; world += step / L.S;
   updateCars(t, dt);
   draw(t);
   updateLabels();
@@ -948,8 +1440,10 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {});
 last = performance.now() / 1000;
 requestAnimationFrame(frame);
 
-// tiny handle for the console: fastestLab.goTo(0), fastestLab.play()
-window.fastestLab = { goTo, play, skipIntro: finishIntro, get idx() { return tl.idx; }, set idx(v) { finishIntro(); tl.anim = null; tl.queue = []; tl.idx = clamp(v, 0, LAST); }, cars, snaps };
+// tiny handle for the console: fastestLab.goTo(0), fastestLab.play(), fastestLab.world += 5000
+window.fastestLab = { goTo, play, skipIntro: finishIntro, get idx() { return tl.idx; }, set idx(v) { finishIntro(); tl.anim = null; tl.queue = []; tl.idx = clamp(v, 0, LAST); }, cars, snaps,
+  // distance driven, in car units: fastestLab.world += 5000 skips ahead along the lap
+  get world() { return world; }, set world(v) { if (v < world) for (const st of Object.values(streams)) Object.assign(st, { pos: ZA - 2900, n: 0, prev: '', segs: [], ad: st.sd < 0 ? 0 : 13, name: st.sd < 0 ? 0 : 4, word: st.sd < 0 ? 0 : 3 }); world = +v || 0; } };
 })();
 </script>
 </body>
