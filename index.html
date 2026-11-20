@@ -59,7 +59,7 @@
   .left .r1, .left .r2 { flex-direction: row-reverse; }
   .pos { font: italic 800 34px/1 var(--font); color: var(--tint); }
   .badge { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--bbg); display: grid; place-items: center; box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); }
-  .badge svg { width: 17px; height: 17px; fill: none; stroke: var(--bink); stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+  .badge svg { display: block; width: calc(var(--ls, .7) * 100%); height: calc(var(--ls, .7) * 100%); }
   .name { font: italic 700 28px/1 var(--font); text-transform: uppercase; letter-spacing: .01em; }
   .int { color: var(--mute); font-size: 13px; letter-spacing: .1em; }
   .chip { display: none; font: 700 11px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; padding: 3px 6px 2px; border-radius: 3px; }
@@ -110,7 +110,6 @@
     .left .r1 { justify-content: flex-start; }
     .pos { font-size: 25px; }
     .badge { width: 19px; height: 19px; }
-    .badge svg { width: 13px; height: 13px; }
     .name { flex-basis: 100%; font-size: 19px; }
     .r2 { margin-top: 4px; font-size: 14px; gap: 6px; }
     .int, .r3, .lead .gap { display: none; }
@@ -124,7 +123,7 @@
     #stamp .date { margin-top: 0; font-size: 22px; }
     .label, .label.left { padding-top: 5px; padding-bottom: 3px; }
     .pos { font-size: 22px; } .name { font-size: 18px; }
-    .badge { width: 18px; height: 18px; } .badge svg { width: 12px; height: 12px; }
+    .badge { width: 18px; height: 18px; }
     .r2 { margin-top: 3px; font-size: 13px; }
   }
 </style>
@@ -165,8 +164,8 @@
    STANDINGS · everything you'd want to retune lives in this block.
    ════════════════════════════════════════════════════════════════════════
 
-   LABS       one entry per lab: name, sub-brand, livery colors and the
-              emblem (an SVG path drawn in a 24×24 box, stroked, no fill).
+   LABS       one entry per lab: name, sub-brand and livery colors.
+              (The official logos live in LOGOS, just below this block.)
 
    SNAPSHOTS  a list of dated classifications. Each lists the labs in
               finishing order, P1 first. `gap` is the interval in seconds
@@ -180,17 +179,12 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 const LABS = {
-  anthropic: { name: 'Anthropic', sub: 'Claude',            color: '#D9774F', accent: '#F6EDE0',
-               emblem: 'M5 20 L12 4 L19 20 M8.2 13.5 H15.8' },
-  openai:    { name: 'OpenAI',    sub: 'GPT',               color: '#12A37F', accent: '#F2FFFA',
-               emblem: 'M12 3.2 L19.6 7.6 V16.4 L12 20.8 L4.4 16.4 V7.6 Z M12 10 V14' },
+  anthropic: { name: 'Anthropic', sub: 'Claude',            color: '#D9774F', accent: '#F6EDE0' },
+  openai:    { name: 'OpenAI',    sub: 'GPT',               color: '#12A37F', accent: '#F2FFFA' },
   google:    { name: 'Google',    sub: 'Gemini · DeepMind', color: '#F3F5F9', accent: '#3B82F6',
-               stripes: ['#4285F4', '#EA4335', '#FBBC05', '#34A853'],
-               emblem: 'M18.6 7.2 A8.2 8.2 0 1 0 20.2 12 H12.6' },
-  meta:      { name: 'Meta',      sub: 'Muse',              color: '#0A6CFF', accent: '#EAF2FF',
-               emblem: 'M4.5 18.5 V6 L12 15.5 L19.5 6 V18.5' },
-  spacexai:  { name: 'SpaceX AI', sub: 'Grok · ex-xAI',     color: '#14161B', accent: '#C3CAD3',
-               emblem: 'M6 5 L18 19 M19 4.5 C15 8 9.5 14 4.5 20' },
+               stripes: ['#4285F4', '#EA4335', '#FBBC05', '#34A853'] },
+  meta:      { name: 'Meta',      sub: 'Muse',              color: '#0A6CFF', accent: '#EAF2FF' },
+  spacexai:  { name: 'SpaceX AI', sub: 'Grok · ex-xAI',     color: '#14161B', accent: '#C3CAD3' },
 };
 
 const SNAPSHOTS = [
@@ -225,6 +219,57 @@ const SNAPSHOTS = [
     ],
   },
 ];
+
+/* ════════════════════════════════════════════════════════════════════════
+   LOGOS · the labs' official marks, inlined so the page works offline.
+   ════════════════════════════════════════════════════════════════════════
+
+   Path data is copied unmodified from the source files noted on each
+   entry and keeps the brand's own colours and proportions. Each mark is
+   drawn on the car's engine-cover roundel and in the chip beside its name.
+
+   box    the mark's bounding box in its source file: [x, y, width, height]
+   size   how much of the roundel's diameter the mark's longer side spans
+   bg     roundel colour, when the livery accent would clash with the mark
+   paths  [fill, path data] pairs; a fill is a colour or a linear gradient
+   ════════════════════════════════════════════════════════════════════════ */
+
+const LOGOS = {
+  // Anthropic mark, in the brand's dark slate.
+  // Source: https://cdn.jsdelivr.net/npm/simple-icons@16.38.0/icons/anthropic.svg (simpleicons.org)
+  anthropic: { box: [0, 3.541, 24, 16.918], size: .7, paths: [
+    ['#141413', 'M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z'],
+  ] },
+  // OpenAI "blossom" symbol (2025 redraw), black on white.
+  // Source: https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg
+  openai: { box: [1.676, 1.75, 16.65, 16.5], size: .74, paths: [
+    ['#000000', 'M11.248 18.25q-.825 0-1.568-.314a4.3 4.3 0 0 1-1.32-.874 4 4 0 0 1-1.304.214 4 4 0 0 1-2.046-.544 4.27 4.27 0 0 1-1.518-1.485 4 4 0 0 1-.56-2.095q0-.48.131-1.04A4.4 4.4 0 0 1 2.04 10.71a4.07 4.07 0 0 1 .017-3.4 4.2 4.2 0 0 1 1.056-1.418 3.8 3.8 0 0 1 1.6-.842 3.9 3.9 0 0 1 .76-1.683q.593-.759 1.451-1.188a4.04 4.04 0 0 1 1.832-.429q.825 0 1.567.313.742.314 1.32.875a4 4 0 0 1 1.304-.215q1.106 0 2.046.545a4.14 4.14 0 0 1 1.501 1.485q.578.941.578 2.095 0 .48-.132 1.04.66.61 1.023 1.419.363.792.363 1.666 0 .892-.38 1.717a4.3 4.3 0 0 1-1.072 1.435 3.8 3.8 0 0 1-1.584.825 3.8 3.8 0 0 1-.775 1.683 4.06 4.06 0 0 1-1.436 1.188 4.04 4.04 0 0 1-1.832.429m-4.076-2.062q.825 0 1.435-.347l3.103-1.782a.36.36 0 0 0 .164-.313v-1.42L7.881 14.62a.67.67 0 0 1-.726 0l-3.118-1.798a.5.5 0 0 1-.017.115v.198q0 .841.396 1.551.413.693 1.139 1.089a3.2 3.2 0 0 0 1.617.412m.165-2.69a.4.4 0 0 0 .181.05q.083 0 .165-.05l1.238-.71-3.977-2.31a.7.7 0 0 1-.363-.643v-3.58q-.825.362-1.32 1.122a2.9 2.9 0 0 0-.495 1.65q0 .809.413 1.55.412.743 1.072 1.123zm3.91 3.663q.875 0 1.585-.396a2.96 2.96 0 0 0 1.534-2.64v-3.564a.32.32 0 0 0-.165-.297l-1.254-.726v4.604a.7.7 0 0 1-.363.643l-3.119 1.799a3 3 0 0 0 1.783.577m.627-6.039V8.878L10.01 7.822 8.129 8.878v2.244l1.881 1.056zM7.057 5.859a.7.7 0 0 1 .363-.644l3.119-1.798a3 3 0 0 0-1.782-.578q-.874 0-1.584.396A2.96 2.96 0 0 0 6.05 4.324a3.07 3.07 0 0 0-.396 1.551v3.547q0 .199.165.314l1.237.726zm8.383 7.887q.825-.364 1.303-1.123.495-.758.495-1.65a3.15 3.15 0 0 0-.412-1.55q-.413-.743-1.073-1.123l-3.086-1.782q-.099-.065-.181-.049a.3.3 0 0 0-.165.05l-1.238.692 3.993 2.327a.6.6 0 0 1 .264.264.64.64 0 0 1 .1.363zm-3.317-8.382a.63.63 0 0 1 .726 0l3.135 1.831v-.297q0-.792-.396-1.501a2.86 2.86 0 0 0-1.105-1.155q-.71-.43-1.65-.43-.825 0-1.436.347L8.294 5.941a.36.36 0 0 0-.165.314v1.418z'],
+  ] },
+  // Google "G" in its four brand colours, on white as Google shows it.
+  // Source: https://commons.wikimedia.org/wiki/File:Google_%22G%22_logo.svg (from google.com)
+  google: { box: [1, 1, 22, 22], size: .64, bg: '#FFFFFF', paths: [
+    ['#4285F4', 'M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'],
+    ['#34A853', 'M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'],
+    ['#FBBC05', 'M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'],
+    ['#EA4335', 'M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'],
+  ] },
+  // Meta symbol with its official blue gradients.
+  // Source: https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo_(cropped).svg (from about.meta.com/brand/resources)
+  meta: { box: [0, 0, 287.56, 191], size: .76, paths: [
+    ['#0081fb', 'm31.06,125.96c0,10.98 2.41,19.41 5.56,24.51 4.13,6.68 10.29,9.51 16.57,9.51 8.1,0 15.51-2.01 29.79-21.76 11.44-15.83 24.92-38.05 33.99-51.98l15.36-23.6c10.67-16.39 23.02-34.61 37.18-46.96 11.56-10.08 24.03-15.68 36.58-15.68 21.07,0 41.14,12.21 56.5,35.11 16.81,25.08 24.97,56.67 24.97,89.27 0,19.38-3.82,33.62-10.32,44.87-6.28,10.88-18.52,21.75-39.11,21.75l0-31.02c17.63,0 22.03-16.2 22.03-34.74 0-26.42-6.16-55.74-19.73-76.69-9.63-14.86-22.11-23.94-35.84-23.94-14.85,0-26.8,11.2-40.23,31.17-7.14,10.61-14.47,23.54-22.7,38.13l-9.06,16.05c-18.2,32.27-22.81,39.62-31.91,51.75-15.95,21.24-29.57,29.29-47.5,29.29-21.27,0-34.72-9.21-43.05-23.09-6.8-11.31-10.14-26.15-10.14-43.06z'],
+    [{ x1: 61, y1: 117, x2: 259, y2: 127, stops: [[0, '#0064e1'], [.4, '#0064e1'], [.83, '#0073ee'], [1, '#0082fb']] }, 'm24.49,37.3c14.24-21.95 34.79-37.3 58.36-37.3 13.65,0 27.22,4.04 41.39,15.61 15.5,12.65 32.02,33.48 52.63,67.81l7.39,12.32c17.84,29.72 27.99,45.01 33.93,52.22 7.64,9.26 12.99,12.02 19.94,12.02 17.63,0 22.03-16.2 22.03-34.74l27.4-.86c0,19.38-3.82,33.62-10.32,44.87-6.28,10.88-18.52,21.75-39.11,21.75-12.8,0-24.14-2.78-36.68-14.61-9.64-9.08-20.91-25.21-29.58-39.71l-25.79-43.08c-12.94-21.62-24.81-37.74-31.68-45.04-7.39-7.85-16.89-17.33-32.05-17.33-12.27,0-22.69,8.61-31.41,21.78z'],
+    [{ x1: 45, y1: 139, x2: 45, y2: 66, stops: [[0, '#0082fb'], [1, '#0064e0']] }, 'm82.35,31.23c-12.27,0-22.69,8.61-31.41,21.78-12.33,18.61-19.88,46.33-19.88,72.95 0,10.98 2.41,19.41 5.56,24.51l-26.48,17.44c-6.8-11.31-10.14-26.15-10.14-43.06 0-30.75 8.44-62.8 24.49-87.55 14.24-21.95 34.79-37.3 58.36-37.3z'],
+  ] },
+  // SpaceXAI symbol (the July 2026 rebrand of xAI: SpaceX's swooping X with the "A" set inside it).
+  // Black on white: the mark is thin and wide, so it needs all the contrast it can get at this size.
+  // Source: https://commons.wikimedia.org/wiki/File:SpaceXAI_2026_logo.svg (from x.ai)
+  spacexai: { box: [674.732, 388.668, 758.458, 289.8], size: .9, bg: '#FFFFFF', paths: [
+    ['#000000', 'M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z'],
+    ['#000000', 'M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z'],
+    ['#000000', 'M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z'],
+    ['#000000', 'M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z'],
+  ] },
+};
 
 const TUNING = {
   speed: 780,        // road scroll, px per second
@@ -302,8 +347,7 @@ const cars = labIds.map((id, n) => {
   const car = {
     id, lab, seed: n,
     tint: dark ? lab.accent : lab.color,
-    bbg: lab.accent,
-    bink: lum(lab.accent) > .45 ? (lum(lab.color) > .6 ? '#15171a' : mix(lab.color, '#000000', .35)) : '#ffffff',
+    logo: LOGOS[id], bbg: (LOGOS[id] && LOGOS[id].bg) || lab.accent,
     x: 0, px: 0, vx: 0, lane: -1, side: -1, by: 0, gap: startGaps[id], int: 0, rank: 0, ahead: null,
     ph: Array.from({ length: 6 }, (_, k) => rng(n * 7 + k + 3)() * Math.PI * 2),
     sparkAt: 2 + rng(n + 40)() * 6, sparkEnd: 0, sprite: null, sw: 0, sh: 0, els: {}, cache: {},
@@ -314,6 +358,34 @@ cars.slice().sort((a, b) => a.gap - b.gap || a.seed - b.seed).forEach((c, i) => 
   c.rank = c.gridSlot = i; c.lane = c.side = i % 2 ? 1 : -1;
 });
 
+/* ---------- logos ---------- */
+let gradIds = 0;
+function logoSvg(logo) {           // chip version: inline SVG, cropped to the mark's own box
+  if (!logo) return '';
+  let defs = '';
+  const body = logo.paths.map(([fill, d]) => {
+    if (typeof fill !== 'string') {
+      const id = 'lg' + gradIds++;
+      defs += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fill.x1}" y1="${fill.y1}" x2="${fill.x2}" y2="${fill.y2}">` +
+        fill.stops.map(([o, col]) => `<stop offset="${o}" stop-color="${esc(col)}"/>`).join('') + '</linearGradient>';
+      fill = `url(#${id})`;
+    }
+    return `<path fill="${esc(fill)}" d="${esc(d)}"/>`;
+  }).join('');
+  return `<svg viewBox="${logo.box.join(' ')}" style="--ls:${logo.size}" aria-hidden="true">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
+}
+function drawLogo(g, logo, cx, cy, dia) {   // car version: same paths, centred on a roundel of diameter `dia`
+  if (!logo) return;
+  const [x, y, w, h] = logo.box, s = dia * logo.size / Math.max(w, h);
+  g.save(); g.translate(cx, cy); g.scale(s, s); g.translate(-x - w / 2, -y - h / 2);
+  for (const [fill, d] of logo.paths) {
+    if (typeof fill === 'string') g.fillStyle = fill;
+    else { const gr = g.createLinearGradient(fill.x1, fill.y1, fill.x2, fill.y2); for (const [o, col] of fill.stops) gr.addColorStop(o, col); g.fillStyle = gr; }
+    g.fill(new Path2D(d));
+  }
+  g.restore();
+}
+
 /* ---------- labels (DOM, one per side per car) ---------- */
 for (const c of cars) {
   for (const side of ['left', 'right']) {
@@ -321,9 +393,8 @@ for (const c of cars) {
     el.className = 'label ' + side;
     el.style.setProperty('--tint', c.tint);
     el.style.setProperty('--bbg', c.bbg);
-    el.style.setProperty('--bink', c.bink);
     el.innerHTML =
-      `<div class="r1"><span class="pos"></span><span class="badge"><svg viewBox="0 0 24 24"><path d="${esc(c.lab.emblem)}"/></svg></span><span class="name"></span></div>` +
+      `<div class="r1"><span class="pos"></span><span class="badge">${logoSvg(c.logo)}</span><span class="name"></span></div>` +
       `<div class="r2"><span class="gap"></span><span class="int"></span><span class="chip drs">DRS</span><span class="chip fl">Fastest lab</span></div>` +
       `<div class="r3"><b class="sub"></b><span class="note"></span></div>`;
     labelsEl.appendChild(el);
@@ -475,12 +546,10 @@ function buildSprite(c) {
   g.fillStyle = '#07080a'; g.beginPath(); g.ellipse(0, 6, 2.3, 1.6, 0, 0, Math.PI * 2); g.fill();
   g.strokeStyle = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.28)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, 9); g.lineTo(0, 33); g.stroke();
 
-  // emblem roundel on the engine cover
+  // logo roundel on the engine cover
   g.fillStyle = c.bbg; g.beginPath(); g.arc(0, 19.4, 7.5, 0, Math.PI * 2); g.fill();
   g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = .6; g.stroke();
-  g.save(); g.translate(0, 19.4); g.scale(10.4 / 24, 10.4 / 24); g.translate(-12, -12);
-  g.strokeStyle = c.bink; g.lineWidth = 3; g.stroke(new Path2D(lab.emblem));
-  g.restore();
+  drawLogo(g, c.logo, 0, 19.4, 15);
 
   // rear wing
   if (stripes) { const seg = 32.4 / stripes.length; g.save(); g.clip(RWING); stripes.forEach((col, i) => { g.fillStyle = col; g.fillRect(-16.2 + i * seg, 41, seg + .1, 9); }); g.restore(); }
