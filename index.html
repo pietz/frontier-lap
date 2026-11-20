@@ -66,9 +66,16 @@
   .chip.on { display: inline-block; }
   .chip.drs { background: var(--green); color: #03140a; }
   .chip.fl { background: var(--purple); color: #fff; }
+  .chip.io { background: var(--yellow); color: #1a1400; }
   .r3 { margin-top: 7px; font: 400 13px/1.3 var(--body); color: #c9ced5; }
   .r3 b { font: 600 12px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
   .r3 b::after { content: ' / '; opacity: .5; }
+  /* a crowded field: labels drop the note line so every car keeps its name */
+  .dense .r3, .dense .int { display: none; }
+  @media (min-width: 641px) { .dense .pos { font-size: 28px; } .dense .name { font-size: 23px; } }
+
+  /* ---------- replay: a quick dip to black while everything goes back to the grid ---------- */
+  #curtain { position: fixed; inset: 0; z-index: 4; background: var(--bg); opacity: 0; pointer-events: none; }
 
   /* ---------- timeline ---------- */
   #deck { position: fixed; z-index: 5; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%);
@@ -87,6 +94,7 @@
   #tl .tk { position: absolute; top: 9px; width: 2px; height: 22px; margin-left: -1px; background: rgba(255,255,255,.4); }
   #tl .tick { position: absolute; top: 35px; transform: translateX(-50%); background: none; border: 0; padding: 4px 8px 6px; color: var(--mute); font: 600 13px/1 var(--font); letter-spacing: .15em; white-space: nowrap; cursor: pointer; z-index: 5; transition: color .15s; }
   #tl .tick:hover, #tl .tick.on { color: #fff; }
+  #tl .tick.mute { visibility: hidden; }
   #tl .tick:focus-visible, #play:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
   #tl .knob { position: absolute; top: 20px; left: 0; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(182,92,255,.4), 0 2px 12px rgba(0,0,0,.7); pointer-events: none; z-index: 2; }
   #scrub { position: absolute; left: -12px; top: 3px; width: calc(100% + 24px); height: 34px; margin: 0; opacity: 0; cursor: grab; z-index: 4; }
@@ -145,6 +153,7 @@
 <body>
 <canvas id="track" aria-hidden="true"></canvas>
 <div id="labels" aria-live="off"></div>
+<div id="curtain" aria-hidden="true"></div>
 
 <header id="brand">
   <h1>Fastest <em>Lab</em></h1>
@@ -174,127 +183,74 @@
 <p id="fine">One person's opinion.<br>Gaps are vibes, not benchmarks.</p>
 <p id="hint"><kbd>←</kbd> <kbd>→</kbd> travel in time<br><kbd>C</kbd> change cars</p>
 
+<!-- The standings, the labs and their logos live in data.js. That is the file to edit. -->
+<script src="data.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════════════
-   STANDINGS · everything you'd want to retune lives in this block.
-   ════════════════════════════════════════════════════════════════════════
-
-   LABS       one entry per lab: name, sub-brand and livery colors.
-              (The official logos live in LOGOS, just below this block.)
-
-   SNAPSHOTS  a list of dated classifications. Each lists the labs in
-              finishing order, P1 first. `gap` is the interval in seconds
-              to the car directly AHEAD (the leader's gap is ignored).
-              Bigger number = more empty road. Want Google closer to
-              OpenAI? Shrink Google's gap. That's the whole interface.
-
-              Add a snapshot and the timeline grows a new stop by itself;
-              cars drive between snapshots. A lab missing from a snapshot
-              simply starts (or ends) off the back of the screen.
+   SETTINGS · how it drives and how the replay plays.
+   (What it shows is in data.js: standings, labs and logos.)
    ════════════════════════════════════════════════════════════════════════ */
-
-const LABS = {
-  anthropic: { name: 'Anthropic', sub: 'Claude',            color: '#D9774F', accent: '#F6EDE0' },
-  openai:    { name: 'OpenAI',    sub: 'GPT',               color: '#12A37F', accent: '#F2FFFA' },
-  google:    { name: 'Google',    sub: 'Gemini · DeepMind', color: '#F3F5F9', accent: '#3B82F6',
-               stripes: ['#4285F4', '#EA4335', '#FBBC05', '#34A853'] },
-  meta:      { name: 'Meta',      sub: 'Muse',              color: '#0A6CFF', accent: '#EAF2FF' },
-  spacexai:  { name: 'SpaceX AI', sub: 'Grok · ex-xAI',     color: '#14161B', accent: '#C3CAD3' },
-};
-
-const SNAPSHOTS = [
-  { // demo: true = a placeholder guess so the timeline has somewhere to go. Retune or delete.
-    date: '2025-11-20', headline: 'Three-way knife fight', demo: true,
-    standings: [
-      { lab: 'google',    gap: 0,    note: 'Gemini has the moment.' },
-      { lab: 'anthropic', gap: 0.25, note: 'Tucked into the slipstream.' },
-      { lab: 'openai',    gap: 0.45, note: 'Third, but only just.' },
-      { lab: 'spacexai',  gap: 1.00, note: 'Quick in a straight line.', name: 'xAI', sub: 'Grok' },
-      { lab: 'meta',      gap: 1.50, note: 'A very long pit stop.', sub: 'Llama' },
-    ],
-  },
-  {
-    date: '2026-05-20', headline: 'Anthropic breaks the tow', demo: true,
-    standings: [
-      { lab: 'anthropic', gap: 0,    note: 'Out front and pulling away.' },
-      { lab: 'openai',    gap: 0.55, note: 'Leading the chase.' },
-      { lab: 'google',    gap: 0.35, note: 'Lost the lead, kept the pace.' },
-      { lab: 'spacexai',  gap: 1.10, note: 'Holding fourth, for now.' },
-      { lab: 'meta',      gap: 0.70, note: 'Muse is finding lap time.' },
-    ],
-  },
-  { // ← the real one: the owner's take, November 2026
-    date: '2026-11-20', headline: 'Clear air up front',
-    standings: [
-      { lab: 'anthropic', gap: 0,    note: 'Clear leader.' },
-      { lab: 'openai',    gap: 1.00, note: 'Still second.' },                              // the noticeable gap
-      { lab: 'google',    gap: 0.25, note: "Caught up a lot. Right on OpenAI's gearbox." }, // tight battle
-      { lab: 'meta',      gap: 1.70, note: 'Muse did well. Just ahead of SpaceX AI.' },     // the larger gap
-      { lab: 'spacexai',  gap: 0.30, note: 'Close behind Meta.' },                          // tight battle
-    ],
-  },
-];
-
-/* ════════════════════════════════════════════════════════════════════════
-   LOGOS · the labs' official marks, inlined so the page works offline.
-   ════════════════════════════════════════════════════════════════════════
-
-   Path data is copied unmodified from the source files noted on each
-   entry and keeps the brand's own colours and proportions. Each mark is
-   drawn on the car's engine-cover roundel and in the chip beside its name.
-
-   box    the mark's bounding box in its source file: [x, y, width, height]
-   size   how much of the roundel's diameter the mark's longer side spans
-   bg     roundel colour, when the livery accent would clash with the mark
-   paths  [fill, path data] pairs; a fill is a colour or a linear gradient
-   ════════════════════════════════════════════════════════════════════════ */
-
-const LOGOS = {
-  // Anthropic mark, in the brand's dark slate.
-  // Source: https://cdn.jsdelivr.net/npm/simple-icons@16.38.0/icons/anthropic.svg (simpleicons.org)
-  anthropic: { box: [0, 3.541, 24, 16.918], size: .7, paths: [
-    ['#141413', 'M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z'],
-  ] },
-  // OpenAI "blossom" symbol (2025 redraw), black on white.
-  // Source: https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg
-  openai: { box: [1.676, 1.75, 16.65, 16.5], size: .74, paths: [
-    ['#000000', 'M11.248 18.25q-.825 0-1.568-.314a4.3 4.3 0 0 1-1.32-.874 4 4 0 0 1-1.304.214 4 4 0 0 1-2.046-.544 4.27 4.27 0 0 1-1.518-1.485 4 4 0 0 1-.56-2.095q0-.48.131-1.04A4.4 4.4 0 0 1 2.04 10.71a4.07 4.07 0 0 1 .017-3.4 4.2 4.2 0 0 1 1.056-1.418 3.8 3.8 0 0 1 1.6-.842 3.9 3.9 0 0 1 .76-1.683q.593-.759 1.451-1.188a4.04 4.04 0 0 1 1.832-.429q.825 0 1.567.313.742.314 1.32.875a4 4 0 0 1 1.304-.215q1.106 0 2.046.545a4.14 4.14 0 0 1 1.501 1.485q.578.941.578 2.095 0 .48-.132 1.04.66.61 1.023 1.419.363.792.363 1.666 0 .892-.38 1.717a4.3 4.3 0 0 1-1.072 1.435 3.8 3.8 0 0 1-1.584.825 3.8 3.8 0 0 1-.775 1.683 4.06 4.06 0 0 1-1.436 1.188 4.04 4.04 0 0 1-1.832.429m-4.076-2.062q.825 0 1.435-.347l3.103-1.782a.36.36 0 0 0 .164-.313v-1.42L7.881 14.62a.67.67 0 0 1-.726 0l-3.118-1.798a.5.5 0 0 1-.017.115v.198q0 .841.396 1.551.413.693 1.139 1.089a3.2 3.2 0 0 0 1.617.412m.165-2.69a.4.4 0 0 0 .181.05q.083 0 .165-.05l1.238-.71-3.977-2.31a.7.7 0 0 1-.363-.643v-3.58q-.825.362-1.32 1.122a2.9 2.9 0 0 0-.495 1.65q0 .809.413 1.55.412.743 1.072 1.123zm3.91 3.663q.875 0 1.585-.396a2.96 2.96 0 0 0 1.534-2.64v-3.564a.32.32 0 0 0-.165-.297l-1.254-.726v4.604a.7.7 0 0 1-.363.643l-3.119 1.799a3 3 0 0 0 1.783.577m.627-6.039V8.878L10.01 7.822 8.129 8.878v2.244l1.881 1.056zM7.057 5.859a.7.7 0 0 1 .363-.644l3.119-1.798a3 3 0 0 0-1.782-.578q-.874 0-1.584.396A2.96 2.96 0 0 0 6.05 4.324a3.07 3.07 0 0 0-.396 1.551v3.547q0 .199.165.314l1.237.726zm8.383 7.887q.825-.364 1.303-1.123.495-.758.495-1.65a3.15 3.15 0 0 0-.412-1.55q-.413-.743-1.073-1.123l-3.086-1.782q-.099-.065-.181-.049a.3.3 0 0 0-.165.05l-1.238.692 3.993 2.327a.6.6 0 0 1 .264.264.64.64 0 0 1 .1.363zm-3.317-8.382a.63.63 0 0 1 .726 0l3.135 1.831v-.297q0-.792-.396-1.501a2.86 2.86 0 0 0-1.105-1.155q-.71-.43-1.65-.43-.825 0-1.436.347L8.294 5.941a.36.36 0 0 0-.165.314v1.418z'],
-  ] },
-  // Google "G" in its four brand colours, on white as Google shows it.
-  // Source: https://commons.wikimedia.org/wiki/File:Google_%22G%22_logo.svg (from google.com)
-  google: { box: [1, 1, 22, 22], size: .64, bg: '#FFFFFF', paths: [
-    ['#4285F4', 'M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'],
-    ['#34A853', 'M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'],
-    ['#FBBC05', 'M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'],
-    ['#EA4335', 'M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'],
-  ] },
-  // Meta symbol with its official blue gradients.
-  // Source: https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo_(cropped).svg (from about.meta.com/brand/resources)
-  meta: { box: [0, 0, 287.56, 191], size: .76, paths: [
-    ['#0081fb', 'm31.06,125.96c0,10.98 2.41,19.41 5.56,24.51 4.13,6.68 10.29,9.51 16.57,9.51 8.1,0 15.51-2.01 29.79-21.76 11.44-15.83 24.92-38.05 33.99-51.98l15.36-23.6c10.67-16.39 23.02-34.61 37.18-46.96 11.56-10.08 24.03-15.68 36.58-15.68 21.07,0 41.14,12.21 56.5,35.11 16.81,25.08 24.97,56.67 24.97,89.27 0,19.38-3.82,33.62-10.32,44.87-6.28,10.88-18.52,21.75-39.11,21.75l0-31.02c17.63,0 22.03-16.2 22.03-34.74 0-26.42-6.16-55.74-19.73-76.69-9.63-14.86-22.11-23.94-35.84-23.94-14.85,0-26.8,11.2-40.23,31.17-7.14,10.61-14.47,23.54-22.7,38.13l-9.06,16.05c-18.2,32.27-22.81,39.62-31.91,51.75-15.95,21.24-29.57,29.29-47.5,29.29-21.27,0-34.72-9.21-43.05-23.09-6.8-11.31-10.14-26.15-10.14-43.06z'],
-    [{ x1: 61, y1: 117, x2: 259, y2: 127, stops: [[0, '#0064e1'], [.4, '#0064e1'], [.83, '#0073ee'], [1, '#0082fb']] }, 'm24.49,37.3c14.24-21.95 34.79-37.3 58.36-37.3 13.65,0 27.22,4.04 41.39,15.61 15.5,12.65 32.02,33.48 52.63,67.81l7.39,12.32c17.84,29.72 27.99,45.01 33.93,52.22 7.64,9.26 12.99,12.02 19.94,12.02 17.63,0 22.03-16.2 22.03-34.74l27.4-.86c0,19.38-3.82,33.62-10.32,44.87-6.28,10.88-18.52,21.75-39.11,21.75-12.8,0-24.14-2.78-36.68-14.61-9.64-9.08-20.91-25.21-29.58-39.71l-25.79-43.08c-12.94-21.62-24.81-37.74-31.68-45.04-7.39-7.85-16.89-17.33-32.05-17.33-12.27,0-22.69,8.61-31.41,21.78z'],
-    [{ x1: 45, y1: 139, x2: 45, y2: 66, stops: [[0, '#0082fb'], [1, '#0064e0']] }, 'm82.35,31.23c-12.27,0-22.69,8.61-31.41,21.78-12.33,18.61-19.88,46.33-19.88,72.95 0,10.98 2.41,19.41 5.56,24.51l-26.48,17.44c-6.8-11.31-10.14-26.15-10.14-43.06 0-30.75 8.44-62.8 24.49-87.55 14.24-21.95 34.79-37.3 58.36-37.3z'],
-  ] },
-  // SpaceXAI symbol (the July 2026 rebrand of xAI: SpaceX's swooping X with the "A" set inside it).
-  // Black on white: the mark is thin and wide, so it needs all the contrast it can get at this size.
-  // Source: https://commons.wikimedia.org/wiki/File:SpaceXAI_2026_logo.svg (from x.ai)
-  spacexai: { box: [674.732, 388.668, 758.458, 289.8], size: .9, bg: '#FFFFFF', paths: [
-    ['#000000', 'M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z'],
-    ['#000000', 'M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z'],
-    ['#000000', 'M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z'],
-    ['#000000', 'M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z'],
-  ] },
-};
 
 const TUNING = {
   speed: 780,        // road scroll, px per second
   drsWindow: 0.40,   // cars closer than this to the car ahead get a DRS chip
   wobble: 1,         // 0 = cars on rails, 1 = alive, 2 = rookies
   sparks: true,
+  carGap: 0.62,      // a car is never longer than this many gap-seconds of road. A longer field
+                     // (more labs, bigger gaps) gets smaller cars, so the gaps stay readable.
+                     // If a crowded field jams (four or more cars within one car length, cars
+                     // sitting behind the place their label claims), lower it, e.g. to 0.45.
+};
+
+/* ────────────────────────────────────────────────────────────────────────
+   PLAYBACK · the replay you get from the play button (or the space bar).
+
+   A replay goes back to the first snapshot, shows the start lights,
+   launches the labs of that first snapshot off the grid, then drives
+   through every snapshot up to the latest. Each snapshot is one step:
+   the cars MOVE to the new standings, then HOLD there so you can read it.
+
+   length      Seconds the whole drive from first to latest snapshot should
+               take (lights and launch come on top). This is the one to
+               change: 30 = "two years in half a minute".
+   spacing     How `length` is shared between the steps:
+               'calendar'  a step lasts in proportion to the real time
+                           between its two snapshots (six quiet months take
+                           longer than one busy month)
+               'uniform'   every step lasts the same
+   transition  [shortest, longest] seconds the cars take to move from one
+               snapshot to the next. The overtakes happen here. A step in
+               which a lab joins or leaves takes at least the middle of
+               the two: that car has the whole field to drive past.
+   hold        [shortest, longest] seconds the picture rests on a snapshot.
+               The shortest hold is what keeps close snapshots readable.
+
+   How they combine: each step gets its share of `length`, but never less
+   than shortest move + shortest hold and never more than longest move +
+   longest hold. The move takes what it can, the hold gets the rest. So
+   `length` is hit exactly whenever those limits allow it. With many
+   snapshots the replay runs longer rather than rushing; with very few it
+   ends early rather than idling. `fastestLab.plan()` in the browser console
+   prints the resulting timing.
+
+   speed       Multiplier on the whole replay. 2 = twice as fast. Add
+               ?speed=2 to the page address to try a value without editing.
+   lights      Seconds for the five start lights to come on and go out.
+   launch      Seconds from lights out until the first standings are reached.
+   ──────────────────────────────────────────────────────────────────────── */
+
+const PLAYBACK = {
+  length: 30,
+  spacing: 'calendar',
+  transition: [1.4, 2.6],
+  hold: [0.7, 4],
+  speed: 1,
+  lights: 2.3,
+  launch: 3,
 };
 
 /* ════════════════════════════════════════════════════════════════════════
-   Engine. No need to touch anything below to change the standings.
+   Engine. No need to touch anything below to change the standings or the replay.
    ════════════════════════════════════════════════════════════════════════ */
 (() => {
 'use strict';
@@ -315,63 +271,173 @@ const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', '
 const FONT = '"Barlow Condensed", "Arial Narrow", sans-serif';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- snapshots → cumulative gaps ---------- */
-const snaps = SNAPSHOTS.filter(s => s.standings && s.standings.length)
-  .map(s => {
-    let cum = 0; const gaps = {}, entry = {};
-    s.standings.forEach((e, i) => {
-      if (!LABS[e.lab]) return;
-      cum += i === 0 ? 0 : Math.max(0, +e.gap || 0);
-      gaps[e.lab] = cum; entry[e.lab] = e;
-    });
-    return { ...s, time: Date.parse(s.date), gaps, entry, span: cum };
-  })
-  .sort((a, b) => a.time - b.time);
-const LAST = snaps.length - 1;
-const MAX_SPAN = Math.max(1, ...snaps.map(s => s.span));
-const OFF = MAX_SPAN + 2.4;                       // "not in this snapshot": parked off the back
-const labIds = [...new Set(snaps.slice().reverse().flatMap(s => s.standings.map(e => e.lab)))].filter(id => LABS[id]);
-const tPos = snaps.map(s => LAST ? (s.time - snaps[0].time) / (snaps[LAST].time - snaps[0].time) : 1);
+/* ---------- data.js → checked labs and snapshots ---------- */
+const query = new URLSearchParams(location.search);
+const DATA_FILE = 'data.js';
+const LOGOS = window.LOGOS && typeof window.LOGOS === 'object' ? window.LOGOS : {};
+const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const problems = [];
+const bad = msg => { problems.push(msg); };
 
-function gapsAt(idx) {
-  const i = clamp(Math.floor(idx), 0, LAST), j = Math.min(i + 1, LAST), f = idx - i;
-  const out = {}; let min = Infinity;
-  for (const id of labIds) {
-    const v = lerp(snaps[i].gaps[id] ?? OFF, snaps[j].gaps[id] ?? OFF, f);
-    out[id] = v; if (v < min) min = v;
+function parseDate(s) {             // 'YYYY-MM-DD' (or 'YYYY-MM') → UTC ms, NaN when it isn't a real date
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(String(s).trim());
+  if (!m) return NaN;
+  const y = +m[1], mo = +m[2] - 1, d = +(m[3] || 1), D = new Date(Date.UTC(y, mo, d));
+  return D.getUTCFullYear() === y && D.getUTCMonth() === mo && D.getUTCDate() === d ? D.getTime() : NaN;
+}
+
+// The plain-text table (see the top of data.js) → the same shape as the object form.
+function readSnapshotText(text) {
+  const out = []; let cur = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line[0] === '#' || line.startsWith('//')) continue;
+    if (/^\d/.test(line)) {                                   // 2026-11-20  Headline  (demo)
+      const m = /^(\S+)\s*(.*?)\s*(\(demo\))?$/i.exec(line);
+      out.push(cur = { date: m[1], headline: m[2], demo: !!m[3], standings: [] });
+      continue;
+    }
+    if (!cur) { bad(`"${line}" comes before any snapshot. Open one first with a date line such as "2026-11-20  Headline".`); continue; }
+    const [main, ...extras] = line.split('|');                // lab  +gap  note  | name=…
+    const m = /^(\S+)(?:\s+([+-]?\d*[.,]?\d+)(?=\s|$))?\s*(.*)$/.exec(main.trim());
+    const e = { lab: m[1], note: m[3] };
+    if (m[2] != null) {
+      // On the leader's line only a +number is a gap, so a note like "40 Elo clear" stays a note.
+      if (cur.standings.length || /^[+-]/.test(m[2])) e.gap = +m[2].replace(',', '.');
+      else e.note = (m[2] + ' ' + m[3]).trim();
+    }
+    for (const x of extras) {
+      const kv = /^\s*(name|sub|logo)\s*=\s*(.+?)\s*$/.exec(x);
+      if (kv) e[kv[1]] = kv[2];
+      else bad(`Snapshot ${cur.date}, ${e.lab}: "| ${x.trim()}" isn't an override. Use | name=… | sub=… or | logo=….`);
+    }
+    cur.standings.push(e);
   }
-  for (const id of labIds) out[id] -= min;
   return out;
 }
+
+const labs = {};
+if (!window.LABS || typeof window.LABS !== 'object') bad('LABS is missing. data.js should contain  var LABS = { … };');
+else for (const [id, lab] of Object.entries(window.LABS)) {
+  let { color, accent } = lab;
+  if (!HEX.test(color || '')) { bad(`LABS.${id}: color "${color}" isn't a hex colour like #D9774F. Using grey.`); color = '#8A9099'; }
+  if (!HEX.test(accent || '')) { if (accent != null) bad(`LABS.${id}: accent "${accent}" isn't a hex colour like #F6EDE0. Using white.`); accent = '#F4F5F7'; }
+  const logoOf = (key, where) => {
+    if (LOGOS[key]) return key;
+    if (where != null) bad(`LABS.${id}${where}: logo "${key}" isn't in LOGOS (it has: ${Object.keys(LOGOS).join(', ')}).`);
+    return '';
+  };
+  // eras: the lab's identity over time, oldest first. Each change carries the earlier fields forward.
+  const eras = [{ from: -Infinity, name: lab.name || id, sub: lab.sub || '', logo: logoOf(lab.logo || id, lab.logo ? '' : null) }];
+  const changes = (Array.isArray(lab.changes) ? lab.changes : [])
+    .map(ch => ({ ...ch, t: parseDate(ch.from) }))
+    .filter(ch => !isNaN(ch.t) || bad(`LABS.${id}: a change has from: "${ch.from}", which isn't a real date. Write it as YYYY-MM-DD. Change ignored.`))
+    .sort((a, b) => a.t - b.t);
+  for (const ch of changes) {
+    const was = eras[eras.length - 1];
+    eras.push({ from: ch.t, name: ch.name || was.name, sub: ch.sub ?? was.sub, logo: ch.logo ? logoOf(ch.logo, `, change from ${ch.from}`) || was.logo : was.logo });
+  }
+  // Fields the engine doesn't know about are passed through untouched (e.g. a body style for the car painter).
+  labs[id] = { ...lab, id, color, accent, stripes: (lab.stripes || []).filter(c => HEX.test(c)), eras };
+}
+
+const rawSnaps = typeof window.SNAPSHOTS === 'string' ? readSnapshotText(window.SNAPSHOTS)
+  : Array.isArray(window.SNAPSHOTS) ? window.SNAPSHOTS : (bad('SNAPSHOTS is missing. data.js should contain  var SNAPSHOTS = ` … `;'), []);
+const snaps = [];
+for (const s of rawSnaps) {
+  const what = `Snapshot ${s.date}${s.headline ? ` "${s.headline}"` : ''}`;
+  const time = parseDate(s.date);
+  if (isNaN(time)) { bad(`${what}: "${s.date}" isn't a real date. Write it as YYYY-MM-DD. Snapshot skipped.`); continue; }
+  if (snaps.some(x => x.time === time)) { bad(`${what}: there already is a snapshot on that date. This one is skipped.`); continue; }
+  let cum = 0; const gaps = {}, entry = {}, order = [];
+  for (const e of s.standings || s.entries || []) {
+    if (!labs[e.lab]) { bad(`${what}: unknown lab "${e.lab}". LABS has: ${Object.keys(labs).join(', ')}. Car skipped.`); continue; }
+    if (e.lab in gaps) { bad(`${what}: ${e.lab} is listed twice. The second one is skipped.`); continue; }
+    let gap = 0;
+    if (order.length) {                                       // the leader's gap is ignored
+      gap = e.gap == null || e.gap === '' ? NaN : +e.gap;
+      if (isNaN(gap)) { bad(`${what}: ${e.lab} has no gap to the car ahead. Write one after the lab, e.g. +0.25. Using 0.`); gap = 0; }
+      else if (gap < 0) { bad(`${what}: ${e.lab} has a negative gap (${e.gap}). A gap is the seconds behind the car ahead, so 0 or more. Using 0.`); gap = 0; }
+    }
+    if (e.logo && !LOGOS[e.logo]) bad(`${what}: ${e.lab} asks for logo "${e.logo}", which isn't in LOGOS. Using the lab's own.`);
+    cum += gap; gaps[e.lab] = cum; entry[e.lab] = e; order.push(e.lab);
+  }
+  if (!order.length) { bad(`${what}: no cars in it. Snapshot skipped.`); continue; }
+  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum });
+}
+snaps.sort((a, b) => a.time - b.time);
+
+if (problems.length) {
+  console.error(`[Fastest Lab] ${problems.length} problem${problems.length > 1 ? 's' : ''} in ${DATA_FILE}:\n` + problems.map(p => '  • ' + p).join('\n'));
+  const el = document.createElement('p');
+  el.id = 'dataWarning';
+  el.textContent = snaps.length ? `${problems.length} data problem${problems.length > 1 ? 's' : ''} · see the console` : `Nothing to show: ${DATA_FILE} has no usable snapshots · see the console`;
+  el.style.cssText = 'position:fixed;z-index:9;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 10px 5px;border-radius:4px;background:#ffd23f;color:#1a1400;font:600 13px/1.2 var(--font);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;';
+  document.body.appendChild(el);
+}
+if (!snaps.length) return;
+
+const LAST = snaps.length - 1;
+const MAX_SPAN = Math.max(1, ...snaps.map(s => s.span));
+const MAX_CARS = Math.max(...snaps.map(s => s.order.length));
+const labIds = [...new Set(snaps.slice().reverse().flatMap(s => s.order))];
+const tPos = snaps.map(s => LAST ? (s.time - snaps[0].time) / (snaps[LAST].time - snaps[0].time) : 1);
 const idxToPos = idx => { const i = clamp(Math.floor(idx), 0, LAST), j = Math.min(i + 1, LAST); return lerp(tPos[i], tPos[j], idx - i); };
 const posToIdx = p => { for (let i = 0; i < LAST; i++) if (p <= tPos[i + 1]) return i + clamp((p - tPos[i]) / (tPos[i + 1] - tPos[i]), 0, 1); return LAST; };
+const timeAt = idx => { const i = clamp(Math.floor(idx), 0, LAST), j = Math.min(i + 1, LAST); return lerp(snaps[i].time, snaps[j].time, idx - i); };
 
 /* ---------- state ---------- */
 const cvs = $('#track'), ctx = cvs.getContext('2d');
-const labelsEl = $('#labels');
+const labelsEl = $('#labels'), curtainEl = $('#curtain');
 let W = 0, H = 0, DPR = 1, L = {};
-let scroll = 0, world = 0, last = 0;   // world: distance driven, in car units (see trackside)
-const tl = { idx: LAST, anim: null, queue: [], dragging: false };
-const intro = { t0: null, done: reduced, e: reduced ? 1 : 0, speedF: reduced ? 1 : 0, hud: reduced ? 1 : 0, lit: -1 };
+// scroll: road surface, in px. world: distance driven from the start line, in car units (see trackside).
+// The grid and the start gantry sit at world 0. The page loads mid-lap, with them far behind us.
+const WORLD_ON_LOAD = 7400;
+let scroll = 1e5, world = WORLD_ON_LOAD, last = 0;
+const tl = { idx: LAST, anim: null, dragging: false };
+const intro = { e: 1, speedF: 1, hud: 1, lit: -1 };     // all 1 = racing. A replay winds them back to 0 for the grid.
 const sparks = [];
 
-const startGaps = gapsAt(tl.idx);
 const cars = labIds.map((id, n) => {
-  const lab = LABS[id];
+  const lab = labs[id];
   const dark = lum(lab.color) < .05;
-  const car = {
+  // every mark this car can ever wear: one per era, plus any one-off snapshot overrides
+  const logoKeys = new Set(lab.eras.map(e => e.logo));
+  for (const s of snaps) { const e = s.entry[id]; if (e && e.logo && LOGOS[e.logo]) logoKeys.add(e.logo); }
+  return {
     id, lab, seed: n,
     tint: dark ? lab.accent : lab.color,
-    logo: LOGOS[id], bbg: (LOGOS[id] && LOGOS[id].bg) || lab.accent,
-    x: 0, px: 0, vx: 0, lane: -1, side: -1, by: 0, gap: startGaps[id], int: 0, rank: 0, ahead: null,
+    logoKeys: [...logoKeys], logoKey: undefined, logo: null, bbg: lab.accent, sprites: {},
+    on: false,          // on track at the current point of the timeline
+    ghost: 0,           // +1 driving in (not in the earlier snapshot), -1 pulling off (not in the later one)
+    fresh: false,       // its first snapshot: gets a NEW ENTRY chip
+    pin: 0, pw: 0,      // on the kerb line (joining, retiring, or getting past a jam): which side, and how committed (0..1)
+    esc: 0, stuck: 0,   // boxed in: the side it is escaping along, and for how long it has been held up
+    raw: 0, ty: 0, yo: 0, xd: 0,
+    x: 0, px: 0, vx: 0, wx: 0, wy: 0, rot: 0, lane: -1, side: -1, by: 1e5, gap: 0, int: 0, rank: n, ahead: null,
+    gridSlot: snaps[0].order.indexOf(id),               // only the first snapshot's labs line up on the grid
     ph: Array.from({ length: 6 }, (_, k) => rng(n * 7 + k + 3)() * Math.PI * 2),
     sparkAt: 2 + rng(n + 40)() * 6, sparkEnd: 0, sprite: null, sw: 0, sh: 0, els: {}, cache: {},
   };
-  return car;
 });
-cars.slice().sort((a, b) => a.gap - b.gap || a.seed - b.seed).forEach((c, i) => {
-  c.rank = c.gridSlot = i; c.lane = c.side = i % 2 ? 1 : -1;
-});
+
+// Who a lab is at a point in time: its era from LABS, then any one-off override on the snapshot entry.
+function whoIs(c, time, e) {
+  let era = c.lab.eras[0];
+  for (const x of c.lab.eras) if (x.from <= time) era = x;
+  return { name: e.name || era.name, sub: e.sub || era.sub, logo: e.logo && LOGOS[e.logo] ? e.logo : era.logo };
+}
+function useLogo(c, key) {          // swap the mark on the car and in its name chip
+  if (c.logoKey === key) return;
+  c.logoKey = key; c.logo = LOGOS[key] || null; c.bbg = (c.logo && c.logo.bg) || c.lab.accent;
+  c.sprite = c.sprites[key] || c.sprite;
+  for (const s of ['left', 'right']) if (c.els[s]) { c.els[s].badge.innerHTML = logoSvg(c.logo); c.els[s].el.style.setProperty('--bbg', c.bbg); }
+}
+function buildSprites(c) {          // one sprite per mark, so a rebrand is just a swap
+  const now = c.logoKey ?? c.logoKeys[0];
+  for (const key of c.logoKeys) { c.logo = LOGOS[key] || null; c.bbg = (c.logo && c.logo.bg) || c.lab.accent; buildSprite(c); c.sprites[key] = c.sprite; }
+  c.logoKey = undefined; useLogo(c, now);
+}
 
 /* ---------- logos ---------- */
 let gradIds = 0;
@@ -409,12 +475,12 @@ for (const c of cars) {
     el.style.setProperty('--tint', c.tint);
     el.style.setProperty('--bbg', c.bbg);
     el.innerHTML =
-      `<div class="r1"><span class="pos"></span><span class="badge">${logoSvg(c.logo)}</span><span class="name"></span></div>` +
-      `<div class="r2"><span class="gap"></span><span class="int"></span><span class="chip drs">DRS</span><span class="chip fl">Fastest lab</span></div>` +
+      `<div class="r1"><span class="pos"></span><span class="badge"></span><span class="name"></span></div>` +
+      `<div class="r2"><span class="gap"></span><span class="int"></span><span class="chip io"></span><span class="chip drs">DRS</span><span class="chip fl">Fastest lab</span></div>` +
       `<div class="r3"><b class="sub"></b><span class="note"></span></div>`;
     labelsEl.appendChild(el);
-    c.els[side] = { el, pos: el.querySelector('.pos'), name: el.querySelector('.name'), gap: el.querySelector('.gap'), int: el.querySelector('.int'),
-      drs: el.querySelector('.drs'), fl: el.querySelector('.fl'), sub: el.querySelector('.sub'), note: el.querySelector('.note'), r3: el.querySelector('.r3') };
+    c.els[side] = { el, pos: el.querySelector('.pos'), badge: el.querySelector('.badge'), name: el.querySelector('.name'), gap: el.querySelector('.gap'), int: el.querySelector('.int'),
+      io: el.querySelector('.io'), drs: el.querySelector('.drs'), fl: el.querySelector('.fl'), sub: el.querySelector('.sub'), note: el.querySelector('.note'), r3: el.querySelector('.r3') };
   }
 }
 function setText(c, key, value, prop = 'textContent') {
@@ -440,29 +506,43 @@ function layout() {
   const kerbW = mobile ? 7 : 10;
   const labelMin = mobile ? 106 : 150;
   carLen = Math.min(carLen, Math.max(30, (W - 2 * labelMin - 2 * kerbW - 16) / 4 / 0.46));
+  // The longest field of the whole timeline has to fit, and a car may not hide more than `carGap`
+  // seconds of road: with more labs or bigger gaps the cars shrink instead of piling up.
+  carLen = Math.max(22, Math.min(carLen, TUNING.carGap * usable / (MAX_SPAN + TUNING.carGap)));
   const carW = carLen * 0.46;
   const roadHalf = carW * 2;
   const side = W / 2 - roadHalf - kerbW;
   const S = carLen / 100, z0 = roadHalf + kerbW, lw = Math.min(mobile ? 150 : 310, side - (mobile ? 8 : 18));
   const roomy = side - lw - 19 >= 96 * S;               // is there room for scenery outside the labels?
+  const scale = (usable - carLen) / MAX_SPAN;
+  const gridCars = snaps[0].order.length;
+  const xpin = carW * (0.64 + 1.15) + 1;                // the kerb line, outside wheels over the kerb: where cars join and retire.
+                                                        // Far enough out that a car in the lane beside it needn't move over.
   L = {
-    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2, S, z0,
+    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2, S, z0, scale,
     // The barrier line. Roomy: just outside the labels, so the busy scenery never sits under them.
     // Otherwise it shares the side with the labels, dimmed, and each label gets a darker plate.
     zo: roomy ? z0 + lw + 19 : z0 + side * .4, dim: roomy ? 0 : .45,
-    scale: (usable - carLen) / MAX_SPAN,
     laneOff: carW * 0.64,
     xmax: roadHalf - carW / 2 - 3,
+    xpin,
+    // How far out a car on the kerb line reaches, wobble and a little yaw included. Nothing solid
+    // beside the road (the pit wall, on narrow screens) may start closer than this.
+    reach: xpin + carW / 2 + 7 * S + 2,
+    off: (H + 30 - top) / scale,                        // "not here yet / gone": just below the screen, in gap-seconds
     lw,
     edge: roadHalf + kerbW + 5,
-    gridTop: top + (usable - carLen * (1 + 0.62 * (cars.length - 1))) * 0.36,
+    gridTop: top + (usable - carLen * (1 + 0.62 * (gridCars - 1))) * 0.36,
     words: W >= 1180,
   };
   labelsEl.style.setProperty('--lw', L.lw + 'px');
-  for (const c of cars) buildSprite(c);
+  // When a side can't hold a full label for every other car, labels drop their note line.
+  labelsEl.classList.toggle('dense', Math.ceil(MAX_CARS / 2) * (mobile ? 78 : 106) > usable * .94);
+  for (const c of cars) buildSprites(c);
   buildTiles();
   buildScenery();
   L.corners = [$('#brand'), $('#stamp')].map(el => el.getBoundingClientRect());
+  thinTicks();
 }
 
 /* ---------- car sprites (drawn once, top-down, nose up) ---------- */
@@ -893,7 +973,7 @@ function liveToy(c, t, u) {                        // the wind-up key turns for 
 }
 function emitToy(c) {                              // flint sparks from the friction motor, in team colours
   if (Math.random() < .35) return;
-  const pal = c.lab.stripes || [c.tint, c.lab.accent, '#ffd66b'], rgb = hexRgb(pal[(Math.random() * pal.length) | 0]).join(',');
+  const pal = c.lab.stripes.length ? c.lab.stripes : [c.tint, c.lab.accent, '#ffd66b'], rgb = hexRgb(pal[(Math.random() * pal.length) | 0]).join(',');
   sparks.push({ w: 2.4, col: f => `rgba(${rgb},${f})`,
     x: L.cx + c.x + c.wx + (Math.random() - .5) * L.carW * .4, y: c.by + c.wy + L.carLen * .9,
     vx: (Math.random() - .5) * 260, vy: TUNING.speed * (.3 + Math.random() * .45), life: 0, max: .22 + Math.random() * .35 });
@@ -905,7 +985,7 @@ const CAR_STYLES = {
   toy: { label: 'Toy', title: 'Wind-up toy cars',    paint: paintToy, live: liveToy, emit: emitToy, pace: 1.3, sway: .85, wag: .022 },
 };
 const DEFAULT_STYLE = 'f1';
-let carStyle = (new URLSearchParams(location.search).get('cars') || '').toLowerCase();
+let carStyle = (query.get('cars') || '').toLowerCase();
 if (!CAR_STYLES[carStyle]) carStyle = DEFAULT_STYLE;
 
 const styleBtns = Object.entries(CAR_STYLES).map(([id, s]) => {
@@ -920,7 +1000,7 @@ function setCarStyle(id) {
   if (!CAR_STYLES[id] || id === carStyle) return;
   carStyle = id; sparks.length = 0;
   for (const [k, b] of styleBtns) b.setAttribute('aria-pressed', k === id);
-  for (const c of cars) buildSprite(c);
+  for (const c of cars) buildSprites(c);          // every mark a car can wear, so a rebrand still swaps cleanly
   try {                                            // keep the choice in the URL, so the link is shareable
     const url = new URL(location.href);
     if (id === DEFAULT_STYLE) url.searchParams.delete('cars'); else url.searchParams.set('cars', id);
@@ -986,7 +1066,7 @@ const SCHEMES = [['#a956ee', '#ffffff'], ['#dedcd5', '#101216'], ['#eec43c', '#1
 const THEMES = ['#2b1d42', '#11322e', '#3b1b1e', '#1c2a44'];
 const GREENS = [['#081a11', '#12301f', '#1f4f34'], ['#0a1e14', '#163825', '#28603e'], ['#081a17', '#102e28', '#1d4d42'], ['#101c0f', '#1f321a', '#375629']];
 const TENTS = ['#b6532f', '#2f7d6b', '#c9a13a', '#3c5d9a', '#8a8f98', '#7a4aa8'];
-const FANS = ['#cbb9a4', '#93a6ba', '#b5624f', '#30343c', '#d6c06c', '#6f9480', '#e4e4e6', '#4a576b', '#a886cf'].concat(labIds.map(id => lum(LABS[id].color) < .05 ? LABS[id].accent : LABS[id].color));
+const FANS = ['#cbb9a4', '#93a6ba', '#b5624f', '#30343c', '#d6c06c', '#6f9480', '#e4e4e6', '#4a576b', '#a886cf'].concat(labIds.map(id => lum(labs[id].color) < .05 ? labs[id].accent : labs[id].color));
 const FLAGS = FANS.slice(9).filter(c => lum(c) < .6).concat('#b65cff');
 const hash = (a, b, c) => { let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 const pick = (menu, r) => { let x = r() * menu.reduce((n, m) => n + m[1], 0); return menu.find(m => (x -= m[1]) < 0) || menu[0]; };
@@ -997,6 +1077,10 @@ const streams = {};
 for (const sd of [-1, 1]) for (const layer of ['in', 'out']) {
   const key = (sd < 0 ? 'L-' : 'R-') + layer;
   streams[key] = { key, sd, layer, seed: (sd + 3) * 1000 + (layer === 'in' ? 0 : 400), pos: ZA - 2900, n: 0, ad: sd < 0 ? 0 : 13, name: sd < 0 ? 0 : 4, word: sd < 0 ? 0 : 3, prev: '', segs: [] };
+}
+function setWorld(v) {                              // jump along the track; going back regrows the same scenery from the start
+  if (v < world) for (const st of Object.values(streams)) Object.assign(st, { pos: ZA - 2900, n: 0, prev: '', segs: [], ad: st.sd < 0 ? 0 : 13, name: st.sd < 0 ? 0 : 4, word: st.sd < 0 ? 0 : 3 });
+  world = +v || 0;
 }
 function nextSeg(st) {
   const a = st.pos, o = Math.round(a / LAP) * LAP, r = rng(st.seed + st.n * 17);
@@ -1164,7 +1248,7 @@ if (document.fonts) document.fonts.addEventListener('loadingdone', () => { if (S
 /* the pit lane: peels off the track, runs behind the pit wall, rejoins */
 function pitPath(s, Y) {
   const { cx, S, z0, zo } = L, X = d => cx + d, rh = L.roadHalf - 2;
-  const li = Math.max(z0 + 16 * S, zo - 150 * S), lo = zo - 2 * S, a = s.a, b = s.b;
+  const li = Math.max(z0 + 16 * S, L.reach + 9 * S, zo - 150 * S), lo = zo - 2 * S, a = s.a, b = s.b;   // the wall stays clear of cars on the kerb line
   ctx.beginPath();
   ctx.moveTo(X(rh), Y(a));
   ctx.bezierCurveTo(X(rh), Y(a + 300), X(lo), Y(a + 240), X(lo), Y(a + 560));
@@ -1413,23 +1497,17 @@ function drawOverhead() {
   }
 }
 
-/* ---------- intro: five lights, then away we go ---------- */
+/* ---------- five lights, then away we go (replays only) ---------- */
 const lights = [...document.querySelectorAll('#stamp .lights i')];
 function setLights(n) { if (intro.lit === n) return; intro.lit = n; lights.forEach((el, i) => el.classList.toggle('on', i < n)); }
-const GO = 0.5 + 0.24 * 4 + 0.8;
-function stepIntro(t) {
-  if (intro.done) { intro.e = intro.speedF = intro.hud = 1; setLights(0); document.body.classList.add('live'); return; }
-  if (intro.t0 == null) intro.t0 = t;
-  const k = t - intro.t0;
-  setLights(k < GO ? clamp(Math.floor((k - 0.5) / 0.24) + 1, 0, 5) : 0);
-  const p = clamp((k - GO) / 3.0, 0, 1);
+function setIntro(k) {              // k = seconds since the cars lined up on the grid
+  const go = PLAYBACK.lights, u = go / 2.26, run = Math.max(.1, PLAYBACK.launch);
+  setLights(k < go ? clamp(Math.floor((k - .5 * u) / (.24 * u)) + 1, 0, 5) : 0);
+  const p = clamp((k - go) / run, 0, 1);
   intro.e = easeIO(p);
-  intro.speedF = easeOut(clamp((k - GO) / 1.7, 0, 1));
+  intro.speedF = easeOut(clamp((k - go) / (run * .57), 0, 1));
   intro.hud = smooth(.5, .95, p);
-  if (k > GO + 1.2) document.body.classList.add('live');
-  if (p >= 1) intro.done = true;
 }
-function finishIntro() { intro.done = true; }
 
 /* ---------- timeline ---------- */
 const scrub = $('#scrub'), knob = $('#tl .knob'), fill = $('#tl .fill'), playBtn = $('#play');
@@ -1446,37 +1524,90 @@ const ticks = snaps.map((s, i) => {
   return b;
 });
 if (LAST < 1) { $('#deck').style.display = 'none'; $('#hint').style.display = 'none'; }
+function thinTicks() {              // every snapshot keeps its tick mark; date labels only where they fit
+  const w = $('#tl').clientWidth || 1, need = L.mobile ? 52 : 60;
+  let right = tPos[LAST] * w;
+  for (let i = LAST; i >= 0; i--) {
+    const x = tPos[i] * w, show = i === LAST || i === 0 || (right - x >= need && x >= need);
+    ticks[i].classList.toggle('mute', !show);
+    if (show) right = x;
+  }
+}
 
 function animTo(to, dur, ease = easeIO) { tl.anim = { from: tl.idx, to, t0: performance.now(), dur, ease }; }
 function goTo(i, dur) {
-  finishIntro(); tl.queue = []; tl.playing = false;
+  cancelReplay();
   i = clamp(i, 0, LAST);
   animTo(i, dur ?? clamp(Math.abs(i - tl.idx) * 1500, 450, 3200));
 }
-function play() {
-  finishIntro();
-  if (tl.queue.length || (tl.anim && playBtn.classList.contains('playing'))) { tl.queue = []; tl.anim = null; goTo(Math.round(tl.idx), 400); return; }
-  tl.queue = [];
-  let from = Math.floor(tl.idx + 1e-6);
-  if (tl.idx >= LAST - 1e-3) { tl.queue.push({ to: 0, dur: 1100 }, { wait: 650 }); from = 0; }
-  for (let k = from + 1; k <= LAST; k++) { tl.queue.push({ to: k, dur: 2800 }); if (k < LAST) tl.queue.push({ wait: 800 }); }
-  tl.playing = true;
-}
 function stepAnim(now) {
-  if (!tl.anim && tl.queue.length) {
-    const q = tl.queue.shift();
-    if (q.wait) tl.anim = { from: tl.idx, to: tl.idx, t0: now, dur: q.wait, ease: x => x };
-    else animTo(q.to, q.dur);
-  }
-  if (tl.anim) {
-    const a = tl.anim, p = clamp((now - a.t0) / a.dur, 0, 1);
-    tl.idx = lerp(a.from, a.to, a.ease(p));
-    if (p >= 1) { tl.idx = a.to; tl.anim = null; }
-  }
-  if (!tl.anim && !tl.queue.length) tl.playing = false;
-  playBtn.classList.toggle('playing', !!tl.playing);
+  if (!tl.anim) return;
+  const a = tl.anim, p = clamp((now - a.t0) / a.dur, 0, 1);
+  tl.idx = lerp(a.from, a.to, a.ease(p));
+  if (p >= 1) { tl.idx = a.to; tl.anim = null; }
 }
-scrub.addEventListener('input', () => { finishIntro(); tl.anim = null; tl.queue = []; tl.playing = false; tl.dragging = true; tl.idx = posToIdx(scrub.value / 1000); });
+
+/* ---------- replay: back to the first snapshot, lights, launch, then every snapshot in turn ---------- */
+const SPEED = +query.get('speed') > 0 ? +query.get('speed') : +PLAYBACK.speed > 0 ? +PLAYBACK.speed : 1;
+const DIP = 0.45;                   // seconds to fade to black (and back) around the jump to the grid
+const replay = { on: false, t: 0, onGrid: false, plan: null };
+const range = v => { const [a, b] = [].concat(v).map(Number); return [Math.max(0, a || 0), Math.max(a || 0, b ?? a ?? 0)]; };
+
+// PLAYBACK → seconds per step. Each step gets a share of `length` (by calendar time or evenly),
+// kept between shortest and longest move + hold; the factor is searched so the total hits `length`.
+function buildPlan() {
+  const [t0, t1] = range(PLAYBACK.transition), [h0, h1] = range(PLAYBACK.hold);
+  const hi = Math.max(.2, t0 + h0, t1 + h1);
+  const w = snaps.slice(1).map((s, k) => PLAYBACK.spacing === 'uniform' ? 1 : Math.max(1, s.time - snaps[k].time));
+  // a step in which a lab joins or leaves never gets the shortest transition: that car has the whole field to drive past
+  const m0 = snaps.slice(1).map((s, k) => s.order.some(id => !(id in snaps[k].gaps)) || snaps[k].order.some(id => !(id in s.gaps)) ? (t0 + t1) / 2 : t0);
+  const lo = k => Math.max(.2, m0[k] + h0);
+  const sum = f => w.reduce((a, x, k) => a + clamp(f * x, lo(k), hi), 0);
+  let a = 0, b = w.length ? hi / Math.min(...w) : 0;
+  for (let n = 0; n < 50; n++) { const m = (a + b) / 2; if (sum(m) < PLAYBACK.length) a = m; else b = m; }
+  const steps = w.map((x, k) => { const s = clamp(b * x, lo(k), hi), move = Math.max(.1, clamp(s - h0, m0[k], t1)); return { move, hold: Math.max(0, s - move) }; });
+  const first = clamp(h0, .8, 1.6);                     // rest on the first standings after the launch
+  const drive = steps.reduce((n, s) => n + s.move + s.hold, 0);
+  return { steps, first, drive, total: DIP * 2 + .2 + PLAYBACK.lights + PLAYBACK.launch + first + drive, speed: SPEED };
+}
+function toGrid() {                 // under the black: everything back to the start line
+  tl.idx = 0; tl.anim = null; scroll = 0; setWorld(0); sparks.length = 0;
+  intro.e = intro.speedF = intro.hud = 0;
+  for (const c of cars) c.on = false;                   // so each one is placed afresh, in its grid slot
+}
+function setCurtain(v) { v = clamp(v, 0, 1).toFixed(2); if (curtainEl.style.opacity !== v) curtainEl.style.opacity = v; }
+function cancelReplay() { if (!replay.on) return; replay.on = false; setCurtain(0); }
+function play() {
+  if (LAST < 1) return;
+  if (replay.on) { cancelReplay(); animTo(Math.round(tl.idx), 400); return; }      // the same button stops it
+  tl.anim = null; tl.dragging = false;
+  replay.on = true; replay.t = 0; replay.onGrid = false; replay.plan = buildPlan();
+}
+function stepReplay(dt) {
+  if (!replay.on) {                 // racing as normal; if a replay was cut short on the grid, roll off it
+    for (const k of ['e', 'speedF', 'hud']) intro[k] = Math.min(1, intro[k] + dt * 2.5);
+    setLights(0);
+    return;
+  }
+  const T = (replay.t += dt * SPEED), plan = replay.plan;
+  setCurtain(T < DIP ? T / DIP : 1 - (T - DIP) / DIP);
+  if (T < DIP) return;
+  if (!replay.onGrid) { replay.onGrid = true; toGrid(); }
+  const k = T - DIP - .2;           // let the picture come back before the first light
+  setIntro(Math.max(0, k));
+  let r = k - PLAYBACK.lights - PLAYBACK.launch - plan.first;
+  tl.idx = 0;
+  for (let i = 0; i < plan.steps.length && r > 0; i++) {
+    const s = plan.steps[i];
+    if (r < s.move) { tl.idx = i + easeIO(r / s.move); return; }
+    tl.idx = i + 1; r -= s.move;
+    if (r < s.hold) return;
+    r -= s.hold;
+  }
+  if (r > 0) replay.on = false;     // arrived at today
+}
+
+scrub.addEventListener('input', () => { cancelReplay(); tl.anim = null; tl.dragging = true; tl.idx = posToIdx(scrub.value / 1000); });
 const release = () => { if (!tl.dragging) return; tl.dragging = false; animTo(Math.round(tl.idx), 420, easeOut); };
 scrub.addEventListener('change', release);
 scrub.addEventListener('pointerup', release);
@@ -1494,8 +1625,7 @@ function syncTimelineUI() {
   const pos = idxToPos(tl.idx), near = Math.round(tl.idx), dist = Math.abs(tl.idx - near);
   if (!tl.dragging) scrub.value = Math.round(pos * 1000);
   knob.style.left = fill.style.width = (pos * 100).toFixed(2) + '%';
-  const i = clamp(Math.floor(tl.idx), 0, LAST), j = Math.min(i + 1, LAST);
-  const d = new Date(lerp(snaps[i].time, snaps[j].time, tl.idx - i));
+  const d = new Date(timeAt(tl.idx));
   const date = `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   if (uiCache.date !== date) dateEl.textContent = uiCache.date = date;
   if (uiCache.near !== near) {
@@ -1506,28 +1636,84 @@ function syncTimelineUI() {
   }
   const o = (1 - smooth(.04, .2, dist)).toFixed(2);
   if (uiCache.o !== o) headEl.style.opacity = demoEl.style.opacity = uiCache.o = o;
+  if (uiCache.playing !== replay.on) playBtn.classList.toggle('playing', uiCache.playing = replay.on);
 }
 
 /* ---------- simulation ---------- */
 function updateCars(t, dt) {
-  const g = gapsAt(tl.idx);
-  const order = cars.slice().sort((a, b) => g[a.id] - g[b.id] || a.rank - b.rank);
-  order.forEach((c, i) => { c.rank = i; c.gap = g[c.id]; c.ahead = i ? order[i - 1] : null; c.int = i ? c.gap - order[i - 1].gap : 0; });
-  for (const c of cars) c.by = lerp(L.gridTop + c.gridSlot * L.carLen * 0.62, L.top + c.gap * L.scale, intro.e);
+  // 1. Who is on track right now, and where the data puts them (seconds behind the leader).
+  //    Between two snapshots a lab listed in both simply drives from one gap to the other.
+  //    A lab only in the earlier one retires: it moves over onto the kerb, then falls away backwards
+  //    (first 60% of the step). A lab only in the later one joins: it comes in from below the screen
+  //    and drives up the edge of the road, the field moving over for it, then tucks into its slot
+  //    (last 75% of the step). Retirements go first so the two rarely meet.
+  const i = clamp(Math.floor(tl.idx), 0, LAST), j = Math.min(i + 1, LAST), f = tl.idx - i;
+  const A = snaps[i].gaps, B = f > 0 ? snaps[j].gaps : A;
+  const k1 = Math.ceil(tl.idx - 1e-9), debut = k1 > 0 ? snaps[k1].gaps : null, before = k1 > 0 ? snaps[k1 - 1].gaps : null;
+  const gOut = clamp(f / .6, 0, 1), gIn = clamp((f - .25) / .75, 0, 1);
+  let min = Infinity, outSide = 0;
+  for (const c of cars) {
+    const a = A[c.id], b = B[c.id];
+    c.spawn = !c.on;
+    c.on = a != null || b != null;
+    if (c.spawn && c.on) L.lh = 0;                      // its label has just been filled in: measure the labels again
+    if (!c.on) { c.ghost = c.pin = c.pw = 0; c.fresh = false; c.ahead = null; c.by = 1e5; continue; }
+    const ghost = a == null ? 1 : b == null ? -1 : 0;
+    if (ghost !== c.ghost) {                            // a newcomer that still has cars to get past keeps the kerb until it is through
+      c.esc = c.ghost > 0 && !ghost && c.pw > 0 ? c.pin : 0; c.pin = 0;
+    }
+    c.ghost = ghost;
+    c.fresh = !!debut && c.id in debut && !(c.id in before);
+    c.raw = c.ghost > 0 ? lerp(L.off, b, 1 - Math.pow(1 - gIn, 1.35))
+          : c.ghost < 0 ? lerp(a, L.off, Math.pow(clamp((gOut - .12) / .88, 0, 1), 2))
+          : lerp(a, b, f);
+    if (c.ghost < 0) outSide = c.pin = c.pin || Math.sign(c.x) || c.lane;      // retires onto the kerb on its own side
+    if (c.raw < min) min = c.raw;
+  }
+  const act = cars.filter(c => c.on).sort((a, b) => a.raw - b.raw || (B[a.id] ?? 1e9) - (B[b.id] ?? 1e9) || a.rank - b.rank);
+  let prev = null;
+  act.forEach((c, r) => {
+    c.raw -= min; c.rank = r; c.gap = c.raw;
+    // intervals are between classified cars: one that is arriving or retiring isn't measured against
+    if (c.ghost) { c.ahead = null; c.int = 0; } else { c.ahead = prev; c.int = prev ? c.raw - prev.raw : 0; prev = c; }
+    const road = L.top + c.raw * L.scale;
+    c.ty = intro.e < 1 && c.gridSlot >= 0 ? lerp(L.gridTop + c.gridSlot * L.carLen * 0.62, road, intro.e) : road;
+    if (c.ghost > 0) {                                  // joins up the right-hand kerb (the left one, if a car is retiring on the right)
+      c.pin = c.pin || -outSide || 1; c.esc = 0;
+      const tuck = 1 - smooth(.7, 1, gIn);              // it comes off the kerb for the last part of the way, unless a car is still in the way
+      c.pw = c.yo > L.carLen * .08 ? Math.min(1, Math.max(tuck, c.pw + 3 * dt)) : Math.max(tuck, c.pw - 2.5 * dt);
+      if (c.spawn) { c.lane = c.side = c.pin; c.x = c.px = c.pin * L.xpin; c.vx = c.yo = c.ly = 0; }
+    } else if (c.ghost < 0) { c.pw = smooth(0, .25, gOut); c.esc = 0; }
+    else {
+      if (c.spawn) { c.lane = c.side = r % 2 ? 1 : -1; c.x = c.px = c.lane * L.laneOff; c.vx = c.yo = c.ly = c.pw = c.esc = c.stuck = 0; }
+      // Boxed in: a car held well behind its place for half a second takes to the kerb to get by,
+      // and comes back onto the road once it has. This is what stops traffic jams from sticking.
+      c.stuck = c.yo > L.carLen * .3 ? c.stuck + dt : 0;
+      if (!c.esc && c.stuck > .5) {                     // the nearer kerb, if nobody is alongside on that side; else the other
+        const near = Math.sign(c.x) || c.lane, open = side => !act.some(o => o !== c && Math.abs(o.by - c.by) < L.carLen * 1.16 && Math.sign(o.x - c.x) === side);
+        c.esc = open(near) ? near : open(-near) ? -near : 0;
+      }
+      if (c.esc) { const clear = c.yo < L.carLen * .08; c.pw = clamp(c.pw + (clear ? -2.5 : 3) * dt, 0, 1); if (clear && !c.pw) c.esc = 0; }
+      else c.pw = 0;
+      c.pin = c.esc;
+    }
+  });
 
-  // Lanes. Try all 2^n left/right assignments and keep the cheapest: never two cars nose-to-tail
+  // 2. Lanes. Try all 2^n left/right assignments and keep the cheapest: never two cars nose-to-tail
   // in one lane closer than a car length, never two alongside cars swapping sides through each
   // other, and otherwise prefer the tidy P1-left / P2-right stagger.
-  const near = L.carLen * 1.12, n = cars.length;
+  const near = L.carLen * 1.2, n = act.length;
   let best = 0, bestCost = Infinity;
   for (let m = 0; m < (1 << n); m++) {
     let cost = 0;
     for (let i = 0; i < n && cost < bestCost; i++) {
-      const a = cars[i], la = (m >> i) & 1 ? 1 : -1;
+      const a = act[i], la = (m >> i) & 1 ? 1 : -1;
+      if (a.pin && la !== a.pin) cost += 5000;                 // a car on the edge stays on its side
       if (la !== (a.rank % 2 ? 1 : -1)) cost += 1;
       if (la !== a.lane) cost += .1;
       for (let j = i + 1; j < n; j++) {
-        const b = cars[j], lb = (m >> j) & 1 ? 1 : -1, dy = Math.abs(a.by - b.by);
+        const b = act[j], lb = (m >> j) & 1 ? 1 : -1, dy = Math.abs(a.ty - b.ty);
+        if (a.pw > .5 || b.pw > .5) continue;                  // ...and out of the lanes: the field just moves over for it
         const th = a.lane === b.lane ? near : near * 1.2;      // hysteresis: harder to join a lane than to stay
         if (la === lb) { if (dy < th) cost += 50 + 100 * (1 - dy / th); }
         else if (dy < near * 1.2 && ((la !== a.lane && lb !== b.lane) || (lb - la) * (b.x - a.x) < -L.carW * .5)) cost += 1000;
@@ -1535,26 +1721,59 @@ function updateCars(t, dt) {
     }
     if (cost < bestCost) { bestCost = cost; best = m; }
   }
-  cars.forEach((c, i) => { c.lane = (best >> i) & 1 ? 1 : -1; });
+  act.forEach((c, i) => { c.lane = (best >> i) & 1 ? 1 : -1; });
 
-  // Lateral motion: spring to the lane, shove apart anything that overlaps.
-  const k = 1 - Math.exp(-dt * 4.2);
-  for (const c of cars) { c.x += (c.lane * L.laneOff - c.x) * k; c.side += (c.lane - c.side) * (1 - Math.exp(-dt * 7)); }
-  // Required side-by-side clearance ramps in as two cars start to overlap nose-to-tail.
-  const minSep = L.carW * 1.2;
-  for (let pass = 0; pass < 4; pass++) {
-    for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
-      const a = cars[i], b = cars[j];
-      const req = minSep * smooth(L.carLen * 1.25, L.carLen, Math.abs(a.by - b.by));
-      const dx = b.x - a.x, adx = Math.abs(dx);
-      if (adx >= req) continue;
-      const dir = (adx > .01 ? Math.sign(dx) : 0) || Math.sign(b.lane - a.lane) || (a.seed < b.seed ? 1 : -1);
-      const push = (req - adx) * .5;
-      a.x -= dir * push; b.x += dir * push;
+  // 3. Where each car would like to be sideways: in its lane (or on the edge of the road while it
+  // joins or retires), with cars that overlap nose-to-tail spread apart. The clearance asked for
+  // ramps in as two cars close up, and the road takes three abreast, so one car can come through
+  // between two that are side by side. Nothing is spread while the field sits on the grid.
+  for (const c of act) c.xd = c.pw ? lerp(c.lane * L.laneOff, c.pin * L.xpin, c.pw) : c.lane * L.laneOff;
+  const minSep = L.carW * 1.3 * smooth(0, .5, intro.e), kerbs = act.some(c => c.pw > .05);
+  for (let pass = 0; pass < 10 && minSep > 0; pass++) {
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const a = act[i], b = act[j];
+      // a car on the edge is seen from further off, so the field moves over for it in good time
+      const req = minSep * smooth(L.carLen * (a.pw || b.pw ? 3.2 : 1.45), L.carLen * 1.16, Math.abs(a.by - b.by));
+      if (!req) continue;
+      // a car on the kerb line has everyone else inside it; otherwise keep two cars the way round
+      // they really are, because cars alongside each other can't swap sides
+      const dir = (a.pw > .5 ? -a.pin : b.pw > .5 ? b.pin : 0) || (Math.abs(b.x - a.x) > .5 ? Math.sign(b.x - a.x) : 0) || Math.sign(b.lane - a.lane) || (a.seed < b.seed ? 1 : -1);
+      const gap = dir * (b.xd - a.xd);
+      if (gap >= req) continue;
+      const ma = 1 - a.pw, mb = 1 - b.pw;                      // ...and the car on the edge doesn't give way
+      if (ma + mb < .01) continue;
+      const push = (req - gap) / (ma + mb);
+      a.xd -= dir * push * ma; b.xd += dir * push * mb;
     }
-    for (const c of cars) c.x = clamp(c.x, -L.xmax, L.xmax);
+    // the road itself, unless someone is on a kerb: then the cars beside it may be squeezed onto the other one
+    for (const c of act) { const lim = c.pw ? lerp(L.xmax, L.xpin, c.pw) : kerbs ? L.xpin : L.xmax; c.xd = clamp(c.xd, -lim, lim); }
   }
-  for (const c of cars) {
+
+  // 4. Move, under two hard rules that hold whatever steps 2 and 3 asked for, so no car ever
+  // touches another. Lengthways: front to back, a car that isn't clear sideways of one ahead is
+  // held a length behind it until it is. Sideways: a car alongside another only moves over as far
+  // as there is room. Both act on small steps, so a blocked car waits smoothly instead of jumping.
+  const xClear = L.carW * 1.15, yClear = L.carLen * 1.16, fade = Math.exp(-dt * 5);
+  for (const c of act) { c.yo = c.yo * fade < .05 ? 0 : c.yo * fade; c.by = c.ty + c.yo; }   // an earlier hold eases off
+  const row = act.slice().sort((a, b) => a.by - b.by || a.rank - b.rank);
+  for (let i = 1; i < row.length; i++) {
+    const c = row[i];
+    for (let j = 0; j < i; j++) { const a = row[j]; if (Math.abs(c.x - a.x) < xClear && c.by < a.by + yClear) c.by = a.by + yClear; }
+    c.yo = c.by - c.ty;
+  }
+  const kx = 1 - Math.exp(-dt * 6.5), vmin = L.carLen * 1.2 * dt, vmax = L.carLen * 3.6 * dt;
+  for (const c of row) {
+    const want = c.xd - c.x;                                   // eased, but never slower than a crawl: it does arrive
+    let step = Math.sign(want) * Math.min(Math.abs(want), clamp(Math.abs(want) * kx, vmin, vmax));
+    for (const o of act) {
+      if (o === c || Math.abs(o.by - c.by) >= yClear || Math.sign(o.x - c.x) !== Math.sign(step)) continue;
+      step = Math.sign(step) * Math.min(Math.abs(step), Math.max(0, Math.abs(o.x - c.x) - xClear - .5));
+    }
+    c.x += step;
+    c.side += (c.lane - c.side) * (1 - Math.exp(-dt * 7));
+  }
+
+  for (const c of act) {
     c.vx = lerp(c.vx, (c.x - c.px) / Math.max(dt, .001), .18); c.px = c.x;
     // a little life: drift, surge, twitch
     const st = CAR_STYLES[carStyle], tw = t * st.pace;        // each car style has its own gait
@@ -1563,15 +1782,17 @@ function updateCars(t, dt) {
     c.wy = (Math.sin(tw * .57 + p[2]) * 4.2 + Math.sin(tw * 1.43 + p[3]) * 2.1 + Math.sin(tw * 3.7 + p[4]) * .6) * w;
     const wvx = (Math.cos(tw * .83 + p[0]) * 2.3 * .83 + Math.cos(tw * 2.1 + p[1]) * 1.1 * 2.1) * ws * st.pace;
     // Tilt into the move, but never yaw into a neighbour: the closer a car alongside, the less tilt it gets.
+    // (Step 4 keeps the cars themselves apart; this keeps their corners apart once they wobble and turn.)
     let lim = .14;
-    for (const o of cars) {
+    for (const o of act) {
       if (o === c) continue;
       const along = smooth(L.carLen * 1.3, L.carLen * 1.1, Math.abs(c.by + c.wy - o.by - (o.wy || 0)));
       if (along > 0) lim = Math.min(lim, lerp(.14, clamp((Math.abs(c.x + c.wx - o.x - (o.wx || 0)) - L.carW * 1.02) / (L.carLen * 1.05), 0, .14), along));
     }
     c.rot = clamp((c.vx + wvx) * .0036 + Math.sin(t * 6.1 + p[5]) * st.wag * Math.min(1, w), -lim, lim);
     // sparks from the plank (or whatever this style throws), now and then
-    if (TUNING.sparks && !reduced && intro.speedF > .95) {
+    if (TUNING.sparks && !reduced && intro.speedF > .95 && c.by < H) {
+      if (c.ghost > 0 && c.pw > .6) c.sparkEnd = t + .08;       // a newcomer charging up the kerb throws them all the way
       if (t > c.sparkAt) { c.sparkEnd = t + .22 + Math.random() * .3; c.sparkAt = t + 3.5 + Math.random() * 8; }
       if (t < c.sparkEnd) st.emit(c);
     }
@@ -1627,6 +1848,7 @@ function draw(t) {
     for (let r2 = 0; r2 < 2; r2++) for (let q = 0; q < 16; q++) if ((q + r2) % 2 === 0) ctx.fillRect(rl + q * sq, gy - 22 + r2 * sq - sq, sq, sq);
     ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.lineCap = 'butt';
     for (const c of cars) {
+      if (c.gridSlot < 0) continue;
       const x = cx + (c.gridSlot % 2 ? 1 : -1) * L.laneOff, y = gy + c.gridSlot * carLen * .62 - 5, hw = carW * .58;
       ctx.beginPath(); ctx.moveTo(x - hw, y + 16); ctx.lineTo(x - hw, y); ctx.lineTo(x + hw, y); ctx.lineTo(x + hw, y + 16); ctx.stroke();
     }
@@ -1754,35 +1976,43 @@ function draw(t) {
 
 function updateLabels() {
   const near = Math.round(tl.idx), dist = Math.abs(tl.idx - near), snap = snaps[near];
-  const noteO = (1 - smooth(.04, .2, dist)).toFixed(2);
+  const noteO = (1 - smooth(.04, .2, dist)).toFixed(2), now = timeAt(tl.idx);
   for (const c of cars) {
-    const e = snap.entry[c.id] || {};
+    if (!c.on) { c.oL = c.oR = 0; continue; }
+    const e = snap.entry[c.id] || {}, who = whoIs(c, now, e);
+    useLogo(c, who.logo);
     setText(c, 'pos', 'P' + (c.rank + 1));
-    setText(c, 'name', e.name || c.lab.name);
-    setText(c, 'gap', c.rank ? '+' + c.gap.toFixed(3) : 'LEADER');
-    setText(c, 'int', c.rank > 1 ? 'INT +' + c.int.toFixed(3) : '');
-    setText(c, 'drs:on', c.rank > 0 && c.int < TUNING.drsWindow);
-    setText(c, 'fl:on', c.rank === 0);
+    setText(c, 'name', who.name);
+    setText(c, 'gap', c.ghost < 0 ? '' : c.rank ? '+' + c.gap.toFixed(3) : 'LEADER');
+    setText(c, 'int', c.ahead && c.rank > 1 ? 'INT +' + c.int.toFixed(3) : '');
+    setText(c, 'io', c.ghost < 0 ? 'Out' : c.fresh ? (L.mobile ? 'New' : 'New entry') : '');   // phone labels are too narrow for the long one
+    setText(c, 'io:on', c.ghost < 0 || c.fresh);
+    setText(c, 'drs:on', !!c.ahead && c.int < TUNING.drsWindow);
+    setText(c, 'fl:on', c.rank === 0 && c.ghost >= 0);
     setText(c, 'el:lead', c.rank === 0);
-    setText(c, 'sub', e.sub || c.lab.sub || '');
+    setText(c, 'sub', who.sub);
     setText(c, 'note', e.note || '');
-    const vis = intro.hud * (c.by > L.bottom + 30 ? 0 : 1);
-    const oL = clamp((-c.side - .15) / .7, 0, 1) * vis, oR = clamp((c.side - .15) / .7, 0, 1) * vis;
-    c.oL = oL; c.oR = oR;
+    // a car that is arriving or leaving brings its label in and out with it
+    const vis = intro.hud * (1 - smooth(L.bottom - L.carLen * .5, L.bottom + 24, c.by));
+    c.oL = clamp((-c.side - .15) / .7, 0, 1) * vis; c.oR = clamp((c.side - .15) / .7, 0, 1) * vis;
   }
-  // two labels on the same side never stack on top of each other: the one behind slides down
+  // Two labels on the same side never sit on top of each other: going down the road each one
+  // slides below the one before it, then anything that ran past the bottom is pushed back up.
   if (!L.lh) L.lh = Math.max(...cars.map(c => c.lh = c.els.left.el.offsetHeight)) + 6;
   for (const key of ['oL', 'oR']) {
-    let floor = -1e9;
-    for (const c of cars.filter(c => c[key] > .5).sort((a, b) => a.by - b.by)) {
-      c.push = Math.max(0, floor - c.by); floor = c.by + c.push + L.lh;
-    }
+    const col = cars.filter(c => c[key] > .5).sort((a, b) => a.by - b.by);
+    let edge = -1e9;
+    for (const c of col) { c.push = Math.max(0, edge - c.by); edge = c.by + c.push + L.lh; }
+    edge = L.bottom + 22;
+    for (let k = col.length - 1; k >= 0; k--) { const c = col[k]; c.push = Math.min(c.push, edge - L.lh - c.by); edge = c.by + c.push; }
   }
   for (const c of cars) {
-    c.ly = lerp(c.ly || 0, c.push || 0, .18);
-    const y = (c.by - 1 + c.ly).toFixed(1), oL = c.oL, oR = c.oR;
     const l = c.els.left, r = c.els.right;
-    l.el.style.opacity = oL.toFixed(2); r.el.style.opacity = oR.toFixed(2);
+    if (!c.on) { if (c.cache.vis !== 0) { c.cache.vis = 0; l.el.style.opacity = r.el.style.opacity = 0; } continue; }
+    c.cache.vis = 1;
+    c.ly = lerp(c.ly || 0, c.push || 0, .18);
+    const y = (c.by - 1 + c.ly).toFixed(1);
+    l.el.style.opacity = c.oL.toFixed(2); r.el.style.opacity = c.oR.toFixed(2);
     l.el.style.transform = `translate(${(L.cx - L.edge - L.lw).toFixed(1)}px,${y}px)`;
     r.el.style.transform = `translate(${(L.cx + L.edge).toFixed(1)}px,${y}px)`;
     l.r3.style.opacity = r.r3.style.opacity = noteO;
@@ -1792,7 +2022,7 @@ function updateLabels() {
 /* ---------- main loop ---------- */
 function frame(now) {
   const t = now / 1000, dt = Math.min(.05, Math.max(.001, t - last)); last = t;
-  stepIntro(t);
+  stepReplay(dt);
   stepAnim(now);
   const step = TUNING.speed * (reduced ? .35 : 1) * intro.speedF * dt;
   scroll += step; world += step / L.S;
@@ -1803,17 +2033,25 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+// Page load: no lights, no launch. The field is already racing in the latest standings.
 layout();
-for (const c of cars) { c.x = c.px = c.lane * L.laneOff; }
+for (let n = 0; n < 90; n++) updateCars(0, .05);        // let the cars find their lanes before the first frame
+for (const c of cars) c.side = c.lane;
 addEventListener('resize', layout);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {});
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { L.lh = 0; });
+document.body.classList.add('live');
 last = performance.now() / 1000;
 requestAnimationFrame(frame);
 
-// tiny handle for the console: fastestLab.goTo(0), fastestLab.play(), fastestLab.setCars('gt'), fastestLab.world += 5000
-window.fastestLab = { goTo, play, skipIntro: finishIntro, setCars: setCarStyle, get carStyle() { return carStyle; }, get layout() { return L; }, get idx() { return tl.idx; }, set idx(v) { finishIntro(); tl.anim = null; tl.queue = []; tl.idx = clamp(v, 0, LAST); }, cars, snaps,
-  // distance driven, in car units: fastestLab.world += 5000 skips ahead along the lap
-  get world() { return world; }, set world(v) { if (v < world) for (const st of Object.values(streams)) Object.assign(st, { pos: ZA - 2900, n: 0, prev: '', segs: [], ad: st.sd < 0 ? 0 : 13, name: st.sd < 0 ? 0 : 4, word: st.sd < 0 ? 0 : 3 }); world = +v || 0; } };
+// A handle for the console: fastestLab.goTo(0), fastestLab.play(), fastestLab.plan(), fastestLab.idx = 1.5,
+// fastestLab.setCars('gt'), fastestLab.world += 5000 (skip ahead along the lap, in car units)
+window.fastestLab = {
+  goTo, play, cars, snaps, labs, PLAYBACK, TUNING, problems, setCars: setCarStyle,
+  plan() { const p = buildPlan(); console.table(p.steps.map((s, i) => ({ to: snaps[i + 1].date, move: +s.move.toFixed(2), hold: +s.hold.toFixed(2) }))); return p; },
+  get idx() { return tl.idx; }, set idx(v) { cancelReplay(); tl.anim = null; tl.idx = clamp(+v || 0, 0, LAST); },
+  get replaying() { return replay.on; }, get layout() { return L; }, get intro() { return intro; },
+  get carStyle() { return carStyle; }, get world() { return world; }, set world(v) { setWorld(v); },
+};
 })();
 </script>
 </body>
