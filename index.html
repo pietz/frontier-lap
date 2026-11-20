@@ -43,35 +43,37 @@
   #stamp .lights i.on { background: #ff2a1f; box-shadow: 0 0 10px 2px rgba(255,42,31,.75); }
   #stamp .date { margin-top: 8px; font: italic 700 clamp(22px, 2.5vw, 34px)/1 var(--font); letter-spacing: .03em; font-variant-numeric: tabular-nums; }
   #stamp .headline { margin-top: 5px; font: 600 clamp(11px, 1vw, 14px)/1.2 var(--font); letter-spacing: .15em; text-transform: uppercase; color: var(--mute); transition: opacity .25s; }
+  #stamp .date small { font-size: .62em; font-weight: 600; letter-spacing: .08em; color: var(--mute); margin-right: .3em; }
   #stamp .demo[hidden] { display: none; }
   #stamp .demo { display: inline-block; margin-top: 6px; font: 600 10px/1 var(--font); letter-spacing: .16em; text-transform: uppercase; color: var(--yellow); border: 1px solid rgba(255,210,63,.45); border-radius: 3px; padding: 3px 5px 2px; transition: opacity .25s; }
 
-  /* ---------- car labels ---------- */
+  /* ---------- car labels: position, logo, name, and a line or two about the lab ---------- */
   #labels { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
-  .label { position: absolute; left: 0; top: 0; width: var(--lw); padding: 8px 0 6px 12px; opacity: 0; will-change: transform, opacity;
+  .label { position: absolute; left: 0; top: 0; width: var(--lw); padding: 9px 0 9px 12px; opacity: 0; will-change: transform, opacity;
     background: linear-gradient(90deg, rgba(7,9,11,.8), rgba(7,9,11,.45) 55%, rgba(7,9,11,0));
     border-top: 2px solid; border-image: linear-gradient(90deg, var(--tint), transparent 94%) 1; }
-  .label.left { padding: 8px 12px 6px 0; text-align: right;
+  .label.left { padding: 9px 12px 9px 0; text-align: right;
     background: linear-gradient(270deg, rgba(7,9,11,.8), rgba(7,9,11,.45) 55%, rgba(7,9,11,0));
     border-image: linear-gradient(270deg, var(--tint), transparent 94%) 1; }
+  /* the lab whose event this step is: its label lights up in its own colour, from the road outwards */
+  .label::before { content: ''; position: absolute; inset: -2px 0 0; opacity: var(--hot, 0); pointer-events: none;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--tint) 46%, transparent), color-mix(in srgb, var(--tint) 12%, transparent) 46%, transparent 86%);
+    border-top: 2px solid var(--tint); }
+  .label.left::before { background: linear-gradient(270deg, color-mix(in srgb, var(--tint) 46%, transparent), color-mix(in srgb, var(--tint) 12%, transparent) 46%, transparent 86%); }
+  .label > * { position: relative; }
   .r1 { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
-  .r2 { display: flex; align-items: center; gap: 8px; margin-top: 6px; font: 600 17px/1 var(--font); letter-spacing: .04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .left .r1, .left .r2 { flex-direction: row-reverse; }
-  .pos { font: italic 800 34px/1 var(--font); color: var(--tint); }
+  .left .r1 { flex-direction: row-reverse; }
+  .pos { font: italic 800 32px/1 var(--font); color: var(--tint); }
   .badge { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--bbg); display: grid; place-items: center; box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); overflow: hidden; }
   .badge svg { display: block; overflow: visible; width: calc(var(--ls, .7) * 100%); height: calc(var(--ls, .7) * 100%); }
   .name { font: italic 700 28px/1 var(--font); text-transform: uppercase; letter-spacing: .01em; }
-  .int { color: var(--mute); font-size: 13px; letter-spacing: .1em; }
-  .chip { display: none; font: 700 11px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; padding: 3px 6px 2px; border-radius: 3px; }
-  .chip.on { display: inline-block; }
-  .chip.drs { background: var(--green); color: #03140a; }
-  .chip.fl { background: var(--purple); color: #fff; }
-  .chip.io { background: var(--yellow); color: #1a1400; }
-  .r3 { margin-top: 7px; font: 400 13px/1.3 var(--body); color: #c9ced5; }
-  .r3 b { font: 600 12px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
-  .r3 b::after { content: ' / '; opacity: .5; }
+  .note { margin-top: 7px; max-width: 27em; font: 400 14.5px/1.36 var(--body); color: #d3d7dd; text-wrap: pretty;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .left .note { margin-left: auto; }
+  .note:empty { display: none; }
+  .label.gone .note { font-style: italic; color: var(--mute); }       /* a car pulling off: its note says so, quietly */
   /* a crowded field: labels drop the note line so every car keeps its name */
-  .dense .r3, .dense .int { display: none; }
+  .dense .note { display: none; }
   @media (min-width: 641px) { .dense .pos { font-size: 28px; } .dense .name { font-size: 23px; } }
 
   /* ---------- replay: a quick dip to black while everything goes back to the grid ---------- */
@@ -91,8 +93,14 @@
   #tl { position: relative; flex: 1; height: 62px; }
   #tl .rail { position: absolute; left: 0; right: 0; top: 18px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.17); }
   #tl .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px; background: linear-gradient(90deg, rgba(182,92,255,.15), var(--purple)); }
-  #tl .tk { position: absolute; top: 9px; width: 2px; height: 22px; margin-left: -1px; background: rgba(255,255,255,.4); }
+  #tl .tk { position: absolute; top: 9px; width: 2px; height: 22px; margin-left: -1px; background: rgba(255,255,255,.4); transition: background .2s; }
+  #tl .tk.on { background: #fff; }
+  /* one step per event: a ruler. Short marks for events, a tall one where a year begins */
+  #tl.ruler .tk { top: 13px; height: 14px; background: rgba(255,255,255,.3); }
+  #tl.ruler .tk.year { top: 7px; height: 26px; background: rgba(255,255,255,.62); }
+  #tl.ruler .tk.on { top: 9px; height: 22px; background: #fff; }
   #tl .tick { position: absolute; top: 35px; transform: translateX(-50%); background: none; border: 0; padding: 4px 8px 6px; color: var(--mute); font: 600 13px/1 var(--font); letter-spacing: .15em; white-space: nowrap; cursor: pointer; z-index: 5; transition: color .15s; }
+  #tl .tick.year { color: #dfe2e7; }
   #tl .tick:hover, #tl .tick.on { color: #fff; }
   #tl .tick.mute { visibility: hidden; }
   #tl .tick:focus-visible, #play:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
@@ -100,6 +108,18 @@
   #scrub { position: absolute; left: -12px; top: 3px; width: calc(100% + 24px); height: 34px; margin: 0; opacity: 0; cursor: grab; z-index: 4; }
   #scrub:active { cursor: grabbing; }
   #scrub:focus-visible ~ .knob { box-shadow: 0 0 0 4px var(--purple), 0 0 0 7px rgba(255,255,255,.5); }
+  /* ---------- the caption: one line of commentary per step, a lower third above the timeline ---------- */
+  #cap { position: fixed; z-index: 5; left: 50%; bottom: calc(74px + env(safe-area-inset-bottom)); width: min(640px, calc(100% - 28px));
+    transform: translateX(-50%); display: flex; justify-content: center; pointer-events: none; opacity: 0; --tint: var(--purple); }
+  #cap .plate { position: relative; display: flex; align-items: center; gap: 12px; max-width: 100%; padding: 8px 16px 9px 17px;
+    background: linear-gradient(90deg, rgba(9,11,14,.92), rgba(9,11,14,.84) 62%, rgba(9,11,14,.5)); }
+  #cap .plate::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--tint); }
+  #cap .badge { width: 24px; height: 24px; }
+  #cap .badge:empty { display: none; }
+  #cap p { margin: 0; font: 500 16px/1.3 var(--body); color: #f1f2f4; text-wrap: balance;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  #cap.measure { visibility: hidden; opacity: 0 !important; }
+
   #fine, #hint { position: fixed; z-index: 4; bottom: calc(20px + env(safe-area-inset-bottom)); margin: 0; font: 600 12px/1.3 var(--font); letter-spacing: .15em; text-transform: uppercase; color: var(--mute); opacity: .85; }
   #fine { left: max(16px, 2.5vw); }
   #hint { right: max(16px, 2.5vw); text-align: right; }
@@ -112,27 +132,28 @@
     #brand p span { display: none; }
     #stamp .lights i { width: 8px; height: 8px; }
     #stamp .headline { max-width: 150px; margin-left: auto; }
-    .label { padding: 6px 0 4px 8px; }
-    .label.left { padding: 6px 8px 4px 0; }
+    .label { padding: 6px 0 6px 8px; }
+    .label.left { padding: 6px 8px 6px 0; }
     .r1 { flex-wrap: wrap; gap: 3px 6px; }
     .left .r1 { justify-content: flex-start; }
     .pos { font-size: 25px; }
     .badge { width: 19px; height: 19px; }
     .name { flex-basis: 100%; font-size: 19px; }
-    .r2 { margin-top: 4px; font-size: 14px; gap: 6px; }
-    .int, .r3, .lead .gap { display: none; }
-    .chip { font-size: 10px; padding: 2px 4px 1px; }
-    .chip.fl { letter-spacing: .08em; }
+    /* narrow labels: the condensed face keeps a note to two or three calm lines */
+    .note { margin-top: 5px; font: 500 14px/1.22 var(--font); letter-spacing: .012em; color: #d9dce1; -webkit-line-clamp: 3; }
+    #deck { padding-right: 14px; }
     #tl .tick { font-size: 12px; letter-spacing: .1em; }
+    #cap .plate { gap: 10px; padding: 7px 12px 8px 14px; }
+    #cap .badge { width: 21px; height: 21px; }
+    #cap p { font-size: 14px; line-height: 1.3; -webkit-line-clamp: 3; }
   }
   @media (max-height: 560px) {
-    #brand p, #stamp .headline, #stamp .lights, .r3, .int, #fine, #hint { display: none; }
+    #brand p, #stamp .headline, #stamp .lights, .note, #fine, #hint, #cap { display: none; }
     #brand h1 { font-size: 30px; }
     #stamp .date { margin-top: 0; font-size: 22px; }
     .label, .label.left { padding-top: 5px; padding-bottom: 3px; }
     .pos { font-size: 22px; } .name { font-size: 18px; }
     .badge { width: 18px; height: 18px; }
-    .r2 { margin-top: 3px; font-size: 13px; }
   }
 </style>
 </head>
@@ -153,6 +174,8 @@
   <div class="headline"></div>
   <div class="demo" hidden>Illustrative snapshot</div>
 </div>
+
+<div id="cap" aria-live="polite"><div class="plate"><span class="badge"></span><p></p></div></div>
 
 <footer id="deck">
   <button id="play" aria-label="Replay the season">
@@ -189,20 +212,38 @@
    SNAPSHOTS · a worked example
    ────────────────────────────
 
-       2026-11-20  Clear air up front
-         anthropic            Clear leader.
-         openai     +1.00     Still second.
-         google     +0.25     Right on OpenAI's gearbox.
+       2026-06-09  Fable 5 rewrites the board  @anthropic
+         > Fable 5 launches five index points clear of every other lab.
+         anthropic            Fable 5: five points clear at launch.
+         openai     +1.30     GPT-5.5 suddenly looks a generation old.
+         google     +0.45     Flash is quick. Where is Pro?
 
    • A line that starts with a date (YYYY-MM-DD) opens a snapshot. The rest
      of that line is the headline. Add (demo) at the end to flag the
      snapshot as an illustrative guess.
-   • Every line below it is one car, in finishing order, P1 first:
+   • Optional, for a replay told as events (one snapshot per model release):
+
+         @lab        at the very end of the date line: the lab whose event
+                     this is. Its car glows and its label lights up for
+                     that step. It has to be a lab id from LABS that is on
+                     track in this snapshot or the one before it.
+         > caption   a line starting with > right under the date line: one
+                     sentence on what happened and why the field moved. It
+                     is shown above the timeline, like commentary, during
+                     the replay and when you stop on the snapshot. A second
+                     > line carries on the first. Best under 110 characters.
+
+     Both can be left out, together or one at a time. With no caption
+     anywhere, the page looks as it did before captions existed.
+   • Every line below that is one car, in finishing order, P1 first:
 
          lab id      gap to the car AHEAD      note
 
      The gap is in seconds: +0.25 is wheel to wheel, +1.00 is a clear lead.
      Bigger number = more empty road. The leader has no gap.
+     The note is the one or two lines of text under the lab's name. When a
+     lab joins, say so there ("NEW: Kimi K3, third on debut."); a lab that
+     drops out gets a quiet "Drops out of the fight." on its way off.
    • A lab that isn't listed isn't on track at that date. In a replay it
      comes up the kerb from behind at the first snapshot that lists it,
      and pulls off onto the kerb when a snapshot stops listing it.
@@ -214,17 +255,19 @@
          spacexai   +0.30     Close behind Meta.   | name=X.AI | sub=Grok 5
 
      (name, sub and logo can be overridden. Lasting changes belong in LABS.)
-   • The only character you can't use is the backtick ` because it ends
-     the block.
+   • The only things you can't write are the backtick ` (it ends the
+     block) and a dollar sign followed by a curly bracket.
 
    Generated data can use the same table, or the older object form, which
    the page also accepts unchanged:
 
        var SNAPSHOTS = [
-         { date: '2026-11-20', headline: 'Clear air up front', standings: [
-           { lab: 'anthropic', gap: 0,    note: 'Clear leader.' },
-           { lab: 'openai',    gap: 1.00, note: 'Still second.' },
-         ] },
+         { date: '2026-11-20', headline: 'Clear air up front',
+           event: 'anthropic', caption: 'One sentence on what happened.',   // both optional
+           standings: [
+             { lab: 'anthropic', gap: 0,    note: 'Clear leader.' },
+             { lab: 'openai',    gap: 1.00, note: 'Still second.' },
+           ] },
        ];
    ════════════════════════════════════════════════════════════════════════ */
 
@@ -238,9 +281,13 @@ var SNAPSHOTS = `
 # five. DeepSeek (R1) runs February to June 2025, Moonshot (Kimi K3) July
 # to September 2026. Each took its place inside an existing gap, so the
 # cars around it are exactly as far from the leader as the research says.
+#
+# The @lab and the > caption on each snapshot are placeholders, written from
+# the headlines, until the event-by-event replay replaces this table.
 
 # o1-preview era; Claude 3.5 Sonnet (new) is the coders' pick; Gemini still experimental
 2024-11-20  OpenAI's race to lose
+  > Where it stood: o1-preview on pole, Claude 3.5 Sonnet the coders' pick, Gemini still experimental.
   openai                o1 on pole, the field regrouping.
   anthropic   +0.40     The coders' car of choice.
   google      +0.45     Experimental Geminis trading fastest laps.
@@ -248,7 +295,8 @@ var SNAPSHOTS = `
   spacexai    +0.35     Grok 2: still learning the circuit.
 
 # DeepSeek R1 (Jan 20), Grok 3 (Feb 17), Claude 3.7 Sonnet + Claude Code (Feb 24), GPT-4.5 (Feb 27)
-2025-02-28  Grok 3 gatecrashes the front
+2025-02-28  Grok 3 gatecrashes the front  @spacexai
+  > Grok 3 is the first model past 1400 on LMArena. DeepSeek's R1 and Claude 3.7 Sonnet land the same winter.
   openai                Deep Research, o3-mini, GPT-4.5. Still ahead.
   anthropic   +0.35     Sonnet 3.7 arrives with Claude Code.
   google      +0.30     Gemini 2.0: quick, not quickest.
@@ -257,7 +305,8 @@ var SNAPSHOTS = `
   meta        +1.30     Overtaken by wildcard entry DeepSeek.
 
 # Gemini 2.5 Pro (Mar 25) debuts #1 on LMArena by ~40 points; Llama 4 (Apr 5) benchmark row; o3 lands Apr 16
-2025-04-10  Gemini 2.5 takes pole
+2025-04-10  Gemini 2.5 takes pole  @google
+  > Gemini 2.5 Pro debuts 40 Elo clear on LMArena. Google's first undisputed best model.
   google                Gemini 2.5 Pro. Forty Elo clear.
   openai      +0.20     Ghibli goes viral; o3 still garaged.
   anthropic   +0.30     Sonnet 3.7 keeps the coders loyal.
@@ -266,7 +315,8 @@ var SNAPSHOTS = `
   meta        +1.20     Llama 4: stewards reviewing those benchmarks.
 
 # o3 / o3-pro, Gemini 2.5 Pro + Veo 3 at I/O, Claude 4 (May 22), R1 refresh (May 28); Meta delays Behemoth
-2025-06-10  Three abreast into summer
+2025-06-10  Three abreast into summer  @anthropic
+  > Claude 4 tops the coding benchmarks, o3-pro ships, Google I/O adds Veo 3. Three abreast at the front.
   openai                o3-pro, by a front wing.
   google      +0.15     I/O upgrades: 2.5 Pro and Veo 3.
   anthropic   +0.15     Claude 4 tops the coding sector.
@@ -275,7 +325,8 @@ var SNAPSHOTS = `
   meta        +1.35     Behemoth delayed. Chequebook out.
 
 # Grok 4 (Jul 9) tops the AA index for a month; GPT-5 (Aug 7) takes it back despite a rough launch
-2025-08-10  GPT-5: bumpy but ahead
+2025-08-10  GPT-5: bumpy but ahead  @openai
+  > GPT-5 takes the top spot back from Grok 4, then a user revolt over retired models forces a partial retreat.
   openai                Rough launch, still fastest.
   anthropic   +0.30     Opus 4.1 and a Claude Code boom.
   google      +0.10     Genie 3 dazzles; 2.5 Pro ages.
@@ -283,7 +334,8 @@ var SNAPSHOTS = `
   meta        +2.60     Signing drivers, not setting laps.
 
 # Claude Sonnet 4.5 (Sep 29), Sora 2 (Sep 30), Nano Banana (Aug 26)
-2025-10-01  The coding war
+2025-10-01  The coding war  @anthropic
+  > Claude Sonnet 4.5 hits 77% on SWE-bench Verified, a day before Sora 2. The fight is now about coding agents.
   openai                GPT-5 on top; Sora 2 lands.
   anthropic   +0.20     Sonnet 4.5: 77% on SWE-bench.
   google      +0.25     Nano Banana wins the crowd.
@@ -291,7 +343,8 @@ var SNAPSHOTS = `
   meta        +2.60     Still in the garage.
 
 # Gemini 3 Pro (Nov 18), Claude Opus 4.5 (Nov 24), OpenAI "code red" memo (Dec 2)
-2025-12-03  Code red at OpenAI
+2025-12-03  Code red at OpenAI  @google
+  > Gemini 3 Pro sweeps the leaderboards, Opus 4.5 passes 80% on SWE-bench, and OpenAI declares a code red.
   google                Gemini 3 Pro tops the timing screens.
   anthropic   +0.20     Opus 4.5 breaks 80% on SWE-bench.
   openai      +0.20     Code red on the pit wall.
@@ -299,7 +352,8 @@ var SNAPSHOTS = `
   meta        +2.40     LeCun leaves the team.
 
 # Claude Code's holiday breakout, Opus 4.6 + GPT-5.3-Codex (Feb 5), Gemini 3.1 Pro (Feb 19)
-2026-02-20  Claude Code fever
+2026-02-20  Claude Code fever  @anthropic
+  > Opus 4.6 takes the lead after a winter of Claude Code mania. Gemini 3.1 Pro tops the index, not the mindshare.
   anthropic             Opus 4.6 and a Claude Code craze.
   google      +0.15     Gemini 3.1 Pro tops the index.
   openai      +0.15     GPT-5.3-Codex launched minutes after Opus.
@@ -307,7 +361,8 @@ var SNAPSHOTS = `
   meta        +2.10     Ten months since Llama 4.
 
 # GPT-5.5 (Apr 23) tops the index by 3; Opus 4.7 backlash; Mythos Preview restricted; Muse Spark (Apr 8)
-2026-04-24  GPT-5.5 strikes back
+2026-04-24  GPT-5.5 strikes back  @openai
+  > GPT-5.5 goes three points clear, a week after Opus 4.7 annoyed developers. Meta's Muse Spark joins the top five.
   openai                GPT-5.5 goes three points clear.
   anthropic   +0.25     Mythos locked away; Opus 4.7 grumbles.
   google      +0.30     Gemini 3.1 Pro still in touch.
@@ -315,7 +370,8 @@ var SNAPSHOTS = `
   spacexai    +0.15     Mugged by a Meta comeback.
 
 # Claude Fable 5 (Jun 9) launches ~5 index points clear of every other lab
-2026-06-10  Fable 5 rewrites the board
+2026-06-10  Fable 5 rewrites the board  @anthropic
+  > Fable 5 launches five index points clear of every other lab. The biggest one-day swing in this replay.
   anthropic             Fable 5: five points clear at launch.
   openai      +1.30     GPT-5.5 suddenly looks a generation old.
   google      +0.45     Flash is quick. Where is Pro?
@@ -323,7 +379,8 @@ var SNAPSHOTS = `
   spacexai    +0.15     Grok Build joins the coding race.
 
 # GPT-5.6 Sol (Jul 9), SpaceX AI rebrand + Grok 4.5 (Jul 6-8), Kimi K3 (Jul 16), Opus 5 (Jul 24); Google ships Flash only
-2026-07-25  The pack closes in
+2026-07-25  The pack closes in  @openai
+  > GPT-5.6 Sol lands one point behind Fable 5, Kimi K3 debuts third and a renamed SpaceX AI finds pace.
   anthropic             Fable back from its red flag.
   openai      +0.45     GPT-5.6 Sol: one point off the lead.
   moonshot    +0.50     Kimi K3: wildcard, third fastest on debut.
@@ -332,7 +389,8 @@ var SNAPSHOTS = `
   meta        +0.25     Muse Spark 1.1 keeps the tow.
 
 # Fable 5.1 (Sep 1), Muse Spark 1.3 (Sep 2), GPT-6 Astra (Sep 3-4); Google at its low point
-2026-09-10  GPT-6 arrives
+2026-09-10  GPT-6 arrives  @openai
+  > GPT-6 Astra draws level on coding, but Fable 5.1 keeps Anthropic's nose ahead. Muse Spark 1.3 puts Meta third.
   anthropic             Fable 5.1 keeps its nose ahead.
   openai      +0.30     GPT-6 Astra: level on coding.
   meta        +1.10     Muse Spark 1.3: best of the rest.
@@ -341,7 +399,8 @@ var SNAPSHOTS = `
   google      +0.15     Seven months without a Pro.
 
 # Opus 5.5 (Sep 22), Gemini 4 Argon (Sep 30, GA Oct 13), Muse Wonder (Oct 12), Grok 4.7 (Sep 21)
-2026-10-15  Gemini 4 rejoins the fight
+2026-10-15  Gemini 4 rejoins the fight  @google
+  > Gemini 4 Argon ties GPT-6 Astra for less money. Google goes from last to third; Kimi is squeezed out.
   anthropic             Opus 5.5: fastest by several points.
   openai      +0.85     GPT-6 fast, but not Opus fast.
   google      +0.45     Gemini 4 Argon: back on the podium.
@@ -350,6 +409,7 @@ var SNAPSHOTS = `
 
 # The real one: the owner's take, November 2026.
 2026-11-20  Clear air up front
+  > GPT-6.2 and Gemini 4 Neon land a day apart. OpenAI is second again; Fable stays out of reach.
   anthropic             Clear leader.
   openai      +1.00     Still second.
   google      +0.25     Caught up a lot. Right on OpenAI's gearbox.
@@ -364,7 +424,7 @@ var SNAPSHOTS = `
 
    id        the key on the left; it is what SNAPSHOTS lines refer to
    name      what the label says
-   sub       the small line under it (model family)
+   sub       the model family. Kept for the record; the labels no longer show it
    color     car body          accent   second livery colour
    stripes   optional list of colours for the stripe down the middle and the rear wing
    logo      which LOGOS entry to paint on the car (default: the lab's id)
@@ -488,9 +548,12 @@ var LOGOS = {
 
 const TUNING = {
   speed: 780,        // road scroll, px per second
-  drsWindow: 0.40,   // cars closer than this to the car ahead get a DRS chip
-  wobble: 1,         // 0 = cars on rails, 1 = alive, 2 = rookies
   flames: true,      // exhaust flames now and then
+
+  // How alive the cars are: every car drifts across its lane, surges and falls back, has a look
+  // at the car ahead now and then, and turns its nose into each move.
+  wobble: 1,         // how far: 0 = on rails, 1 = alive, 2 = rookies
+  pace: 1,           // how fast: 0.6 = heavy and unhurried, 1 = alive, 1.5 = nervous
 
   // The gaps are drawn to scale: within one picture, twice the gap is twice the road. How much
   // road a second gets is chosen per snapshot, so that a tight field still uses the height.
@@ -502,8 +565,13 @@ const TUNING = {
   // lanes wide, and no car ever shares its lane with a car it isn't clear of nose to tail. That is
   // what makes "never more than three abreast" a rule and not luck. The cars are sized to fit it:
   // if a snapshot packs four cars closely, all cars get a little smaller.
-  sideGap: 0.40,     // clear road between two cars side by side, in car widths
+  sideGap: 0.50,     // clear road between two cars side by side, in car widths
   noseGap: 0.25,     // clear road between two cars nose to tail in one lane, in car lengths
+  // The wobble lives inside those two gaps. A car with empty road around it moves freely; next to
+  // another car, both get only as much drift and surge as leaves `clearance` between them even if
+  // they lean towards each other at the same moment. So wobble and pace change how lively the
+  // field looks, never how close two cars can come.
+  clearance: 0.09,   // the least road ever left between two cars, in car lengths
 };
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -514,30 +582,41 @@ const TUNING = {
    through every snapshot up to the latest. Each snapshot is one step:
    the cars MOVE to the new standings, then HOLD there so you can read it.
 
-   length      Seconds the whole drive from first to latest snapshot should
-               take (lights and launch come on top). This is the one to
-               change: 46 = "two years in three quarters of a minute".
-   spacing     How `length` is shared between the steps:
+   spacing     How the replay's time is shared between the steps:
+               'events'    every step is one event and gets about the same
+                           time, however far apart the dates are: `event`
+                           seconds, of which the last `hold[0]` are the
+                           rest. The timeline shows one evenly spaced mark
+                           per event. `length` and `transition` are not used.
                'calendar'  a step lasts in proportion to the real time
                            between its two snapshots (six quiet months take
-                           longer than one busy month)
-               'uniform'   every step lasts the same
-   transition  [shortest, longest] seconds the cars take to move from one
-               snapshot to the next. The overtakes happen here. Every move
-               eases in and out, so the busiest moment is the middle. The
-               more overtaking in a step, the longer it gets: a step in
-               which a lab joins or leaves, or with three or more
-               overtakes, never takes less than the longest.
+                           longer than one busy month), and the timeline is
+                           a calendar
+               'uniform'   every step lasts the same share of `length`, on
+                           the calendar timeline
+   event       'events' only. [quietest, busiest] seconds one event gets,
+               move and hold together. The more overtaking in a step, the
+               longer: a step in which a lab joins or leaves, or with three
+               or more overtakes, gets the longest. The caption is on screen
+               for all of it.
+   length      'calendar' and 'uniform'. Seconds the whole drive from first
+               to latest snapshot should take (lights and launch come on
+               top): 46 = "two years in three quarters of a minute".
+   transition  'calendar' and 'uniform'. [shortest, longest] seconds the
+               cars take to move from one snapshot to the next. The
+               overtakes happen here. Every move eases in and out, so the
+               busiest moment is the middle. The more overtaking, the
+               longer, as for `event`.
    hold        [shortest, longest] seconds the picture rests on a snapshot.
                The shortest hold is what keeps close snapshots readable.
 
-   How they combine: each step gets its share of `length`, but never less
-   than shortest move + shortest hold and never more than longest move +
-   longest hold. The move takes what it can, the hold gets the rest. So
-   `length` is hit exactly whenever those limits allow it. With many
-   snapshots the replay runs longer rather than rushing; with very few it
-   ends early rather than idling. `fastestLab.plan()` in the browser console
-   prints the resulting timing.
+   How 'calendar' and 'uniform' combine them: each step gets its share of
+   `length`, but never less than shortest move + shortest hold and never
+   more than longest move + longest hold. The move takes what it can, the
+   hold gets the rest. So `length` is hit exactly whenever those limits
+   allow it. With many snapshots the replay runs longer rather than
+   rushing; with very few it ends early rather than idling.
+   `fastestLab.plan()` in the browser console prints the resulting timing.
 
    speed       Multiplier on the whole replay. 2 = twice as fast. Add
                ?speed=2 to the page address to try a value without editing.
@@ -546,8 +625,9 @@ const TUNING = {
    ──────────────────────────────────────────────────────────────────────── */
 
 const PLAYBACK = {
+  spacing: 'events',
+  event: [2.5, 3.0],
   length: 46,
-  spacing: 'calendar',
   transition: [1.7, 2.8],
   hold: [1.1, 4],
   speed: 1,
@@ -598,9 +678,24 @@ function readSnapshotText(text) {
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line[0] === '#' || line.startsWith('//')) continue;
-    if (/^\d/.test(line)) {                                   // 2026-11-20  Headline  (demo)
-      const m = /^(\S+)\s*(.*?)\s*(\(demo\))?$/i.exec(line);
-      out.push(cur = { date: m[1], headline: m[2], demo: !!m[3], standings: [] });
+    if (/^\d/.test(line)) {                                   // 2026-11-20  Headline  (demo)  @lab
+      const m = /^(\S+)\s*(.*?)$/.exec(line);
+      let head = m[2], event = '', demo = false;
+      for (let n = 0; n < 2; n++) {                           // (demo) and @lab, in either order, come off the end
+        const ev = /(?:^|\s)@(\S*)$/.exec(head), dm = /(?:^|\s)\(demo\)$/i.exec(head);
+        if (ev && !event) { event = ev[1] || '@'; head = head.slice(0, ev.index).trim(); }
+        else if (dm) { demo = true; head = head.slice(0, dm.index).trim(); }
+      }
+      out.push(cur = { date: m[1], headline: head.trim(), demo, event, caption: '', standings: [] });
+      continue;
+    }
+    if (line[0] === '>') {                                    // > what happened, and why the field moved
+      const text = line.slice(1).trim();
+      if (!cur) bad(`The caption "${line}" comes before any snapshot. It belongs right under a date line such as "2026-11-20  Headline".`);
+      else {
+        if (cur.standings.length) bad(`Snapshot ${cur.date}: the caption "> ${text}" comes after the cars. Move it up, right under the date line. (It is shown all the same.)`);
+        if (text) cur.caption = (cur.caption + ' ' + text).trim();
+      }
       continue;
     }
     if (!cur) { bad(`"${line}" comes before any snapshot. Open one first with a date line such as "2026-11-20  Headline".`); continue; }
@@ -671,9 +766,22 @@ for (const s of rawSnaps) {
   if (!order.length) { bad(`${what}: no cars in it. Snapshot skipped.`); continue; }
   // pack4: the least road any four consecutive cars take up, in seconds. It decides how big the cars can be.
   const pack4 = Math.min(Infinity, ...order.slice(3).map((id, k) => gaps[id] - gaps[order[k]]));
-  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum, pack4 });
+  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum, pack4, what,
+    event: s.event == null ? '' : String(s.event).trim().replace(/^@(?=.)/, ''), caption: s.caption == null ? '' : String(s.caption).trim() });
 }
 snaps.sort((a, b) => a.time - b.time);
+// @lab: the lab whose event a snapshot is. It has to be a lab, and one that is in the picture for
+// that step: on track in this snapshot, or in the one before it (then the event is its last).
+snaps.forEach((s, i) => {
+  if (!s.event) return;
+  const id = s.event, low = id.toLowerCase(), near = Object.keys(labs).find(k => k.toLowerCase() === low || (low.length > 2 && (k.startsWith(low.slice(0, 4)) || labs[k].eras.some(e => e.name.toLowerCase().replace(/\s/g, '') === low))));
+  if (id === '@') bad(`${s.what}: the date line ends in a lone "@". Write the lab's id after it, e.g. @${s.order[0]}, or remove it. No car is highlighted.`);
+  else if (!labs[id]) bad(`${s.what}: unknown lab "@${id}" at the end of the date line.${near ? ` Did you mean @${near}?` : ''} LABS has: ${Object.keys(labs).join(', ')}. No car is highlighted.`);
+  else if (!(id in s.gaps) && !(i && id in snaps[i - 1].gaps)) bad(`${s.what}: @${id} isn't on track here: it is in neither this snapshot nor the one before, so there is no car to highlight. List ${id} in the snapshot, or remove @${id}.`);
+  else return;
+  s.event = '';
+});
+const HAS_CAPTIONS = snaps.some(s => s.caption);
 
 if (problems.length) {
   console.error(`[Fastest Lab] ${problems.length} problem${problems.length > 1 ? 's' : ''} in ${DATA_FILE}:\n` + problems.map(p => '  • ' + p).join('\n'));
@@ -689,9 +797,11 @@ const LAST = snaps.length - 1;
 const MAX_SPAN = Math.max(1, ...snaps.map(s => s.span));
 const MAX_CARS = Math.max(...snaps.map(s => s.order.length));
 const labIds = [...new Set(snaps.slice().reverse().flatMap(s => s.order))];
-const tPos = snaps.map(s => LAST ? (s.time - snaps[0].time) / (snaps[LAST].time - snaps[0].time) : 1);
+// The timeline: a calendar, or (one step per event) one evenly spaced mark per snapshot.
+const EVENTS = PLAYBACK.spacing === 'events';
+const tPos = snaps.map((s, i) => !LAST ? 1 : EVENTS ? i / LAST : (s.time - snaps[0].time) / (snaps[LAST].time - snaps[0].time));
 const idxToPos = idx => { const i = clamp(Math.floor(idx), 0, LAST), j = Math.min(i + 1, LAST); return lerp(tPos[i], tPos[j], idx - i); };
-const posToIdx = p => { for (let i = 0; i < LAST; i++) if (p <= tPos[i + 1]) return i + clamp((p - tPos[i]) / (tPos[i + 1] - tPos[i]), 0, 1); return LAST; };
+const posToIdx = p => { for (let i = 0; i < LAST; i++) if (p <= tPos[i + 1]) return i + clamp((p - tPos[i]) / Math.max(1e-9, tPos[i + 1] - tPos[i]), 0, 1); return LAST; };
 const timeAt = idx => { const i = clamp(Math.floor(idx), 0, LAST), j = Math.min(i + 1, LAST); return lerp(snaps[i].time, snaps[j].time, idx - i); };
 
 /* ---------- state ---------- */
@@ -718,10 +828,12 @@ const cars = labIds.map((id, n) => {
     logoKeys: [...logoKeys], logoKey: undefined, logo: null, bbg: lab.accent, sprites: {},
     on: false,          // on track at the current point of the timeline
     ghost: 0,           // +1 driving in (not in the earlier snapshot), -1 pulling off (not in the later one)
-    fresh: false,       // its first snapshot: gets a NEW ENTRY chip
-    x: 0, px: 0, vx: 0, wx: 0, wy: 0, rot: 0, lane: -1, side: -1, by: 1e5, gap: 0, int: 0, rank: n, ahead: null, flash: 0,
+    hot: 0,             // 0…1: this step is its lab's event, the car glows and its label lights up
+    x: 0, px: 0, vx: 0, wx: 0, wy: 0, wvx: 0, wvy: 0, sx: 1, sy: 1, fr: 1, rot: 0, lane: -1, side: -1, by: 1e5, gap: 0, int: 0, rank: n, ahead: null, flash: 0,
     gridSlot: snaps[0].order.indexOf(id),               // only the first snapshot's labs line up on the grid
     ph: Array.from({ length: 6 }, (_, k) => rng(n * 7 + k + 3)() * Math.PI * 2),
+    fq: Array.from({ length: 6 }, (_, k) => .84 + rng(n * 11 + k + 71)() * .32),    // every car keeps its own time, so no two move in step
+    every: 5 + rng(n + 90)() * 3.5,                     // seconds between its looks at the car ahead
     flameAt: 2 + rng(n + 40)() * 6, flameEnd: 0, sprite: null, sw: 0, sh: 0, els: {}, cache: {},
   };
 });
@@ -779,13 +891,9 @@ for (const c of cars) {
     el.className = 'label ' + side;
     el.style.setProperty('--tint', c.tint);
     el.style.setProperty('--bbg', c.bbg);
-    el.innerHTML =
-      `<div class="r1"><span class="pos"></span><span class="badge"></span><span class="name"></span></div>` +
-      `<div class="r2"><span class="gap"></span><span class="int"></span><span class="chip io"></span><span class="chip drs">DRS</span><span class="chip fl">Fastest lab</span></div>` +
-      `<div class="r3"><b class="sub"></b><span class="note"></span></div>`;
+    el.innerHTML = `<div class="r1"><span class="pos"></span><span class="badge"></span><span class="name"></span></div><div class="note"></div>`;
     labelsEl.appendChild(el);
-    c.els[side] = { el, pos: el.querySelector('.pos'), badge: el.querySelector('.badge'), name: el.querySelector('.name'), gap: el.querySelector('.gap'), int: el.querySelector('.int'),
-      io: el.querySelector('.io'), drs: el.querySelector('.drs'), fl: el.querySelector('.fl'), sub: el.querySelector('.sub'), note: el.querySelector('.note'), r3: el.querySelector('.r3') };
+    c.els[side] = { el, pos: el.querySelector('.pos'), badge: el.querySelector('.badge'), name: el.querySelector('.name'), note: el.querySelector('.note') };
   }
 }
 function setText(c, key, value, prop = 'textContent') {
@@ -806,7 +914,8 @@ function layout() {
   const mobile = W <= 640;
   const short = H < 560;                                // phones on their side
   const top = short ? 70 : mobile ? 104 : 118;          // leader's nose
-  const bottom = H - (short ? 82 : mobile ? 92 : 98);   // last car's tail
+  const capH = measureCaption();                        // the tallest caption at this width: the field ends above it
+  const bottom = H - (capH ? 88 + capH : short ? 82 : mobile ? 92 : 98);   // last car's tail: above the caption, or else the timeline
   const usable = Math.max(150, bottom - top);
   const lanes = 3.3 + 2 * TUNING.sideGap;               // the road, in car widths: three abreast, the gaps between them, a little verge
   let carLen = clamp(usable * 0.152, 30, 122);
@@ -841,16 +950,17 @@ function layout() {
     zo: roomy ? z0 + lw + 19 : z0 + side * .4, dim: roomy ? 0 : .45,
     // How far out a car on the kerb line reaches, wobble and a little yaw included. Nothing solid
     // beside the road (the pit wall, on narrow screens) may start closer than this.
-    reach: xpin + carW / 2 + 7 * S + 2,
+    reach: xpin + carW / 2 + (KERB_PLAY + 50 * TURN_FREE) * S + 2,
     yOff: H + 60,                                       // "not here yet / gone": nose well below the screen
-    lw,
+    lw, capH,
+    labelEnd: bottom + (capH ? 12 : 22),                // labels may hang this far below the field, not onto the caption
     edge: roadHalf + kerbW + 5,
     gridTop: top + (usable - carLen * (1 + GRID_ROW * (gridCars - 1))) * 0.36,
     words: W >= 1180,
   };
   labelsEl.style.setProperty('--lw', L.lw + 'px');
   // When a side can't hold a full label for every other car, labels drop their note line.
-  L.dense = Math.ceil(MAX_CARS / 2) * (mobile ? 78 : 106) > usable * .94;
+  L.dense = Math.ceil(MAX_CARS / 2) * (mobile ? 100 : 98) > usable * .94;
   labelsEl.classList.toggle('dense', L.dense);
   buildDrive();
   for (const c of cars) buildSprites(c);
@@ -908,7 +1018,7 @@ function xAt(c, f) {
 // where the field is strung out, three lanes where it bunches up, the tidy stagger (P1 left, P2
 // right, ...) when nothing speaks against it, and labels that have room next to their cars.
 function holdOptions(ys) {          // ys: noses, front first
-  const n = ys.length, pick = [], side = [], labelH = L.mobile ? 76 : L.dense ? 68 : 104;
+  const n = ys.length, pick = [], side = [], labelH = L.mobile ? 100 : L.dense ? 60 : 98;
   let best = Infinity, out = [];
   const go = (i, cost, keep) => {
     if (cost >= (keep ? best + 5.01 : best)) return;
@@ -930,13 +1040,15 @@ function holdOptions(ys) {          // ys: noses, front first
   return out.sort((a, b) => a.cost - b.cost).slice(0, 300);
 }
 // One seating per snapshot, chosen along the whole timeline: cars that stay alongside each other
-// from one snapshot to the next can't swap sides on the way, so they must not be asked to.
+// from one snapshot to the next can't swap sides on the way, so they must not be asked to. The
+// timeline starts on the grid, whose seating is given: the first snapshot has to be reachable from it.
 function holdPoses() {
   const ys = snaps.map((s, i) => s.order.map(id => L.top + s.gaps[id] * L.scales[i]));
   const opts = ys.map(holdOptions);
-  let cost = opts[0].map(o => o.cost), back = [];
-  for (let i = 1; i < snaps.length; i++) {
-    const a = snaps[i - 1].order, b = snaps[i].order, ya = ys[i - 1], yb = ys[i];
+  let cost = [0], back = [];
+  let was = { order: snaps[0].order, ys: snaps[0].order.map((_, r) => L.gridTop + r * L.carLen * GRID_ROW), opts: [{ m: snaps[0].order.map((_, r) => r % 2 ? 1 : -1) }] };
+  for (let i = 0; i < snaps.length; i++) {
+    const a = was.order, b = snaps[i].order, ya = was.ys, yb = ys[i];
     const both = b.map((id, r) => [a.indexOf(id), r]).filter(v => v[0] >= 0);            // [seat before, seat after] of the cars in both
     const tied = [], meet = [], late = [], early = [];                                     // pairs alongside at both ends, and at one end only
     for (let p = 0; p < both.length; p++) for (let q = p + 1; q < both.length; q++) {
@@ -957,7 +1069,7 @@ function holdPoses() {
     const next = [], from = [];
     opts[i].forEach((o, v) => {
       let bc = Infinity, bu = 0;
-      opts[i - 1].forEach((w, u) => {
+      was.opts.forEach((w, u) => {
         let c = cost[u];
         for (const [x, y] of both) c += .35 * Math.abs(o.m[y] - w.m[x]);                   // something for every car that has to move over
         for (const [[x0, y0], [x1, y1]] of tied) if ((w.m[x1] - w.m[x0]) * (o.m[y1] - o.m[y0]) < 0) c += 1000;
@@ -968,7 +1080,7 @@ function holdPoses() {
       for (const [[, y0], [, y1], rush] of late) if (Math.abs(o.m[y1] - o.m[y0]) < 2) bc += rush;
       next.push(bc + o.cost); from.push(bu);
     });
-    cost = next; back.push(from);
+    cost = next; back.push(from); was = { order: b, ys: yb, opts: opts[i] };
   }
   let v = cost.indexOf(Math.min(...cost));
   const poses = [];
@@ -976,7 +1088,7 @@ function holdPoses() {
     const s = snaps[i], m = opts[i][v].m, y = {}, x = {}, side = {};
     s.order.forEach((id, r) => { y[id] = ys[i][r]; x[id] = m[r] * L.dx / 2; side[id] = Math.sign(m[r]) || (r % 2 ? 1 : -1); });
     poses[i] = { y, x, side, scale: L.scales[i] };
-    if (i) v = back[i - 1][v];
+    v = back[i][v];
   }
   return poses;
 }
@@ -1449,12 +1561,9 @@ function paintCar(g, c, u) {
   g.fillStyle = '#0b0c0f'; g.fill(rr(-22.7, 43.4, 2.3, 7.3, .8)); g.fill(rr(20.4, 43.4, 2.3, 7.3, .8));
   if (dark) { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = .6; g.stroke(GT_WING); }
 }
-const PACE = .78;                   // tempo of the cars' drift and surge: heavy cars, unhurried
 function liveCar(c, t, u) {         // per-frame extras over the sprite
   // brake lights: bright while the car is giving ground, dim while it's gaining
-  const tw = t * PACE, p = c.ph;
-  const dv = Math.cos(tw * .57 + p[2]) * 2.4 + Math.cos(tw * 1.43 + p[3]) * 3 + Math.cos(tw * 3.7 + p[4]) * 2.2;
-  const b = intro.speedF < .05 ? 1 : smooth(.4, 3, dv);
+  const b = intro.speedF < .05 ? 1 : smooth(.6, 5, c.wvy / u);
   ctx.shadowColor = `rgba(255,30,20,${.45 + .55 * b})`; ctx.shadowBlur = (4 + 6 * b) * DPR;
   ctx.fillStyle = `rgba(255,${44 + 70 * b | 0},${34 + 46 * b | 0},${.45 + .55 * b})`;
   ctx.fillRect(-16.6 * u, 42 * u, 8.2 * u, 1.6 * u); ctx.fillRect(8.4 * u, 42 * u, 8.2 * u, 1.6 * u);
@@ -1472,7 +1581,8 @@ function emitFlames(c) {                           // flames on the overrun, fro
 }
 
 // Headlights on the road. One soft twin-cone sprite, added over the asphalt under each car;
-// a car inside the DRS window flashes its lights at the one ahead.
+// a car right behind another flashes its lights at it.
+const FLASH_GAP = 0.40;             // seconds
 const beam = { cv: null, key: '', w: 0, h: 0 };
 function drawBeams(t) {
   const u = L.carLen / 100, key = L.carLen + '@' + DPR;
@@ -1492,7 +1602,7 @@ function drawBeams(t) {
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const c of cars) {
     const ph = (t + c.ph[5] * 3) % 6.4;
-    c.flash = c.ahead && c.int < TUNING.drsWindow && intro.hud > .9 && (ph < .11 || (ph > .2 && ph < .31)) ? 1 : 0;
+    c.flash = c.ahead && c.int < FLASH_GAP && intro.hud > .9 && (ph < .11 || (ph > .2 && ph < .31)) ? 1 : 0;
     if (c.by > H + 40) continue;
     ctx.save();
     ctx.translate(L.cx + c.x + c.wx, c.by + c.wy + L.carLen / 2); ctx.rotate(c.rot);
@@ -2002,26 +2112,74 @@ function setIntro(k) {              // k = seconds since the cars lined up on th
 /* ---------- timeline ---------- */
 const scrub = $('#scrub'), knob = $('#tl .knob'), fill = $('#tl .fill'), playBtn = $('#play');
 const dateEl = $('#stamp .date'), headEl = $('#stamp .headline'), demoEl = $('#stamp .demo');
+const tlEl = $('#tl');
+tlEl.classList.toggle('ruler', EVENTS);
+// Every snapshot gets a mark on the rail. Which marks get a date under them:
+//   calendar   each snapshot its month ("APR 25"), as many as fit
+//   events     the two ends ("NOV 24"), then the year where a year begins ("2025"), then the
+//              month where a quarter begins ("APR"), as many as fit. Twenty-odd marks are a
+//              ruler; it is the years and quarters that make it readable.
 const ticks = snaps.map((s, i) => {
-  const b = document.createElement('button');
-  const d = new Date(s.time);
-  b.className = 'tick'; b.type = 'button'; b.style.left = tPos[i] * 100 + '%';
-  b.textContent = `${MONTHS[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`;
-  const tk = document.createElement('i'); tk.className = 'tk'; tk.style.left = b.style.left; $('#tl').appendChild(tk);
-  b.setAttribute('aria-label', `Go to ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`);
+  const d = new Date(s.time), m = MONTHS[d.getUTCMonth()], y = d.getUTCFullYear(), was = i ? new Date(snaps[i - 1].time) : null;
+  const end = i === 0 || i === LAST, year = !!was && was.getUTCFullYear() !== y;
+  const quarter = year || (!!was && Math.floor(was.getUTCMonth() / 3) !== Math.floor(d.getUTCMonth() / 3));
+  const b = document.createElement('button'), tk = document.createElement('i');
+  b.type = 'button'; b.style.left = tk.style.left = tPos[i] * 100 + '%';
+  b.className = 'tick' + (EVENTS && year && !end ? ' year' : ''); tk.className = 'tk' + (EVENTS && year ? ' year' : '');
+  b.textContent = !EVENTS || end ? `${m} ${String(y).slice(2)}` : year ? y : m;
+  b.setAttribute('aria-label', `Go to ${d.getUTCDate()} ${m} ${y}${s.headline ? ': ' + s.headline : ''}`);
   b.addEventListener('click', () => goTo(i));
-  $('#tl').appendChild(b);
-  return b;
+  tlEl.appendChild(tk); tlEl.appendChild(b);
+  return { b, tk, rank: end ? 0 : !EVENTS ? 1 : year ? 1 : quarter ? 2 : 9 };
 });
 if (LAST < 1) { $('#deck').style.display = 'none'; $('#hint').style.display = 'none'; }
-function thinTicks() {              // every snapshot keeps its tick mark; date labels only where they fit
-  const w = $('#tl').clientWidth || 1, need = L.mobile ? 52 : 60;
-  let right = tPos[LAST] * w;
-  for (let i = LAST; i >= 0; i--) {
-    const x = tPos[i] * w, show = i === LAST || i === 0 || (right - x >= need && x >= need);
-    ticks[i].classList.toggle('mute', !show);
-    if (show) right = x;
+function thinTicks() {              // every snapshot keeps its mark; dates only where they fit, the important ones first
+  const w = tlEl.clientWidth || 1, pad = L.mobile ? 7 : 12, placed = [];
+  const order = ticks.map((_, i) => i).filter(i => ticks[i].rank < 9).sort((a, b) => ticks[a].rank - ticks[b].rank || (EVENTS ? a - b : b - a));
+  for (const k of ticks) k.b.classList.add('mute');
+  for (const i of order) {
+    const x = tPos[i] * w, hw = Math.max(8, ticks[i].b.offsetWidth - 16) / 2;      // the text itself, without the button's padding
+    if (!placed.every(q => Math.abs(q.x - x) >= q.hw + hw + pad)) continue;
+    placed.push({ x, hw }); ticks[i].b.classList.remove('mute');
   }
+}
+
+/* ---------- the caption, and the car it is about ----------
+   One line of commentary per step. It belongs to the snapshot the cars are driving TO, so it
+   comes up as they set off and stays while they rest there; going back in time it is the one
+   being returned to. A change of caption is a quick fade out and a slower one in. */
+const capEl = $('#cap'), capBadge = $('#cap .badge'), capText = $('#cap p');
+const ev = { shown: -1, o: 0, t0: -1e3, dir: 1, has: false };
+function fillCaption(i) {
+  const s = snaps[i], c = s.event ? cars.find(c => c.id === s.event) : null;
+  capText.textContent = s.caption;
+  if (c) {
+    const logo = LOGOS[whoIs(c, s.time, s.entry[c.id] || {}).logo] || null;
+    capBadge.innerHTML = logoSvg(logo);
+    capEl.style.setProperty('--tint', c.tint); capEl.style.setProperty('--bbg', (logo && logo.bg) || c.lab.accent);
+  } else { capBadge.innerHTML = ''; capEl.style.setProperty('--tint', 'var(--purple)'); }
+  return !!s.caption;
+}
+function measureCaption() {         // how much height the tallest caption needs at this screen width (0: no captions, or no room for them)
+  if (!HAS_CAPTIONS) return 0;
+  capEl.classList.add('measure');
+  let h = 0;
+  for (let i = 0; i <= LAST; i++) if (fillCaption(i)) h = Math.max(h, capEl.offsetHeight);
+  capEl.classList.remove('measure');
+  if (ev.shown >= 0) ev.has = fillCaption(ev.shown);
+  return h;
+}
+function syncEvent(t, dt) {
+  if (replay.on) ev.dir = 1; else if (tl.anim) ev.dir = Math.sign(tl.anim.to - tl.anim.from) || ev.dir;
+  const want = clamp(tl.dragging ? Math.round(tl.idx) : ev.dir > 0 ? Math.ceil(tl.idx - .06) : Math.floor(tl.idx + .06), 0, LAST);
+  if (want !== ev.shown) {
+    ev.o -= dt / .2;
+    if (ev.o <= 0) { ev.o = 0; ev.shown = want; ev.t0 = t; ev.has = fillCaption(want); }
+  } else ev.o = Math.min(1, ev.o + dt / .38);
+  const o = ev.has ? ease(ev.o) : 0, key = o.toFixed(2);
+  if (uiCache.cap !== key) { uiCache.cap = key; capEl.style.opacity = key; capEl.style.transform = `translate(-50%,${((1 - o) * 7).toFixed(1)}px)`; }
+  const hot = snaps[ev.shown].event;
+  for (const c of cars) c.hot = c.id === hot ? ease(ev.o) : 0;
 }
 
 // tl.idx runs steadily along the timeline; the plan eases every car in and out of each snapshot.
@@ -2054,25 +2212,34 @@ const DIP = 0.45;                   // seconds to fade to black (and back) aroun
 const replay = { on: false, t: 0, onGrid: false, plan: null };
 const range = v => { const [a, b] = [].concat(v).map(Number); return [Math.max(0, a || 0), Math.max(a || 0, b ?? a ?? 0)]; };
 
-// PLAYBACK → seconds per step. Each step gets a share of `length` (by calendar time or evenly),
-// kept between shortest and longest move + hold; the factor is searched so the total hits `length`.
+// PLAYBACK → seconds per step. 'events': every step gets `event` seconds, the busier the longer,
+// the last `hold[0]` of them at rest. Otherwise each step gets a share of `length` (by calendar
+// time or evenly), kept between shortest and longest move + hold; the factor is searched so the
+// total hits `length`.
 function buildPlan() {
   const [t0, t1] = range(PLAYBACK.transition), [h0, h1] = range(PLAYBACK.hold);
-  const hi = Math.max(.2, t0 + h0, t1 + h1);
-  const w = snaps.slice(1).map((s, k) => PLAYBACK.spacing === 'uniform' ? 1 : Math.max(1, s.time - snaps[k].time));
-  // The more overtaking in a step, the longer its transition: the shortest with none, the longest from
-  // three overtakes up, or when a lab joins or leaves (that car has the whole field to drive past).
-  const m0 = snaps.slice(1).map((s, k) => {
+  // How busy a step is, 0…1: 1 from three overtakes up, or when a lab joins or leaves (that car has
+  // the whole field to drive past).
+  const busy = snaps.slice(1).map((s, k) => {
     const a = snaps[k], both = s.order.filter(id => id in a.gaps);
     let passes = both.length < s.order.length || both.length < a.order.length ? 3 : 0;
     both.forEach((p, i) => both.slice(i + 1).forEach(q => { if (a.gaps[p] > a.gaps[q]) passes++; }));
-    return lerp(t0, t1, Math.min(1, passes / 3));
+    return Math.min(1, passes / 3);
   });
-  const lo = k => Math.max(.2, m0[k] + h0);
-  const sum = f => w.reduce((a, x, k) => a + clamp(f * x, lo(k), hi), 0);
-  let a = 0, b = w.length ? hi / Math.min(...w) : 0;
-  for (let n = 0; n < 50; n++) { const m = (a + b) / 2; if (sum(m) < PLAYBACK.length) a = m; else b = m; }
-  const steps = w.map((x, k) => { const s = clamp(b * x, lo(k), hi), move = Math.max(.1, clamp(s - h0, m0[k], t1)); return { move, hold: Math.max(0, s - move) }; });
+  let steps;
+  if (EVENTS) {
+    const [e0, e1] = range(PLAYBACK.event ?? [2.3, 3]);
+    steps = busy.map(v => { const s = Math.max(.5, lerp(e0, e1, v)), hold = Math.min(h0, s * .55); return { move: s - hold, hold }; });
+  } else {
+    const hi = Math.max(.2, t0 + h0, t1 + h1);
+    const w = snaps.slice(1).map((s, k) => PLAYBACK.spacing === 'uniform' ? 1 : Math.max(1, s.time - snaps[k].time));
+    const m0 = busy.map(v => lerp(t0, t1, v));             // the more overtaking in a step, the longer its transition
+    const lo = k => Math.max(.2, m0[k] + h0);
+    const sum = f => w.reduce((a, x, k) => a + clamp(f * x, lo(k), hi), 0);
+    let a = 0, b = w.length ? hi / Math.min(...w) : 0;
+    for (let n = 0; n < 50; n++) { const m = (a + b) / 2; if (sum(m) < PLAYBACK.length) a = m; else b = m; }
+    steps = w.map((x, k) => { const s = clamp(b * x, lo(k), hi), move = Math.max(.1, clamp(s - h0, m0[k], t1)); return { move, hold: Math.max(0, s - move) }; });
+  }
   const first = clamp(h0, .8, 1.6);                     // rest on the first standings after the launch
   const drive = steps.reduce((n, s) => n + s.move + s.hold, 0);
   return { steps, first, drive, total: DIP * 2 + .2 + PLAYBACK.lights + PLAYBACK.launch + first + drive, speed: SPEED };
@@ -2133,17 +2300,60 @@ function syncTimelineUI() {
   if (!tl.dragging) scrub.value = Math.round(pos * 1000);
   knob.style.left = fill.style.width = (pos * 100).toFixed(2) + '%';
   const d = new Date(timeAt(shown));
-  const date = `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  if (uiCache.date !== date) dateEl.textContent = uiCache.date = date;
+  const date = `<small>${d.getUTCDate()}</small>${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  if (uiCache.date !== date) dateEl.innerHTML = uiCache.date = date;
   if (uiCache.near !== near) {
     uiCache.near = near; L.lh = 0;
     headEl.textContent = snaps[near].headline || '';
     demoEl.hidden = !snaps[near].demo;
-    ticks.forEach((b, k) => b.classList.toggle('on', k === near));
+    ticks.forEach((k, n) => { k.b.classList.toggle('on', n === near); k.tk.classList.toggle('on', n === near); });
   }
   const o = (1 - smooth(.04, .2, dist)).toFixed(2);
   if (uiCache.o !== o) headEl.style.opacity = demoEl.style.opacity = uiCache.o = o;
   if (uiCache.playing !== replay.on) playBtn.classList.toggle('playing', uiCache.playing = replay.on);
+}
+
+/* ---------- life: how far a car may move about ----------
+   A car with empty road around it drifts DRIFT across the road and surges SURGE along it (car
+   units: a car is 100 long, 46 wide), and turns its nose up to TURN_FREE. Next to another car that
+   is cut back, pair by pair, by one rule: the plan keeps two cars clear of each other either across
+   the road or along it, and in that direction the two share what is left of the gap once
+   TUNING.clearance and the room their turned noses take are set aside. Half each. So if both lean
+   towards each other at the same moment, with their noses turned, `clearance` is still there.
+   The other direction stays free: two cars side by side still surge past each other's doors.
+   Everything here follows from where the plan puts the cars, so it is as repeatable as the plan,
+   and fastestLab.check() measures the worst case over the whole timeline.
+   ---------------------------------------------------------------------- */
+const DRIFT = 7, SURGE = 9, KERB_PLAY = 3;
+const TURN_TIGHT = .03, TURN_FREE = .12;                // radians
+const BLEND = .5;
+function elbowRoom(list, w) {       // list: cars with x and by. Sets on each: sx, sy (0…1 of DRIFT and SURGE) and fr (0…1 from TURN_TIGHT to TURN_FREE)
+  const u = L.carLen / 100, AX = Math.max(1e-3, DRIFT * u * w), AY = Math.max(1e-3, SURGE * u * w), clr = Math.max(0, +TUNING.clearance || 0) * L.carLen;
+  const rx = L.carLen * TURN_TIGHT, ry = L.carW * TURN_TIGHT, rxf = L.carLen * (TURN_FREE - TURN_TIGHT), ryf = L.carW * (TURN_FREE - TURN_TIGHT);
+  for (const c of list) { c.sx = clamp((L.xpin + KERB_PLAY * u - Math.abs(c.x)) / AX, 0, 1); c.sy = c.fr = 1; }   // the kerb is as far out as anyone goes
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const a = list[i], b = list[j];
+    const gx = Math.abs(a.x - b.x) - L.carW - clr - rx, gy = Math.abs(a.by - b.by) - L.carLen - clr - ry;   // what the two have to share
+    if (gx >= 2 * AX + rxf || gy >= 2 * AY + ryf) continue;                                                // nowhere near each other
+    const tx = clamp(gx / (2 * AX), 0, 1), ty = clamp(gy / (2 * AY), 0, 1);
+    // Clear along the road by more than across it: the surge is what gets shared, the drift is
+    // let go again the clearer they are. And the other way round. Where the two are equal both
+    // are held, so nothing jumps when a car comes alongside.
+    let cx = tx, cy = ty;
+    if (ty >= tx) { if (tx < 1) cx = tx + (1 - tx) * smooth(0, BLEND * (1 - tx), ty - tx); }
+    else cy = ty + (1 - ty) * smooth(0, BLEND * (1 - ty), tx - ty);
+    const fr = Math.max(clamp((gx - 2 * AX) / rxf, 0, 1), clamp((gy - 2 * AY) / ryf, 0, 1));
+    a.sx = Math.min(a.sx, cx); b.sx = Math.min(b.sx, cx); a.sy = Math.min(a.sy, cy); b.sy = Math.min(b.sy, cy); a.fr = Math.min(a.fr, fr); b.fr = Math.min(b.fr, fr);
+  }
+}
+// Now and then a car has a look at the one ahead: a quick dart forward, an easy drop back (one in
+// four times it lifts instead). 0 between looks, up to 1 at the height of one.
+const LUNGE = 2.3;                  // seconds a look takes
+function lunge(c, tw) {
+  const v = tw / c.every + c.ph[5], n = Math.floor(v), q = ((v - n) * c.every - hash(c.seed, n, 7) * (c.every - LUNGE)) / LUNGE;
+  if (q <= 0 || q >= 1) return 0;
+  const s = Math.sin(Math.PI * Math.pow(q, .62));
+  return s * s * (hash(c.seed, n, 9) < .25 ? -.7 : 1);
 }
 
 /* ---------- simulation ---------- */
@@ -2155,21 +2365,19 @@ function updateCars(t, dt) {
   const launching = intro.p < 1 && !tl.idx;
   const st = launching ? stepPlan(-1) : f > 0 ? stepPlan(i) : null, F = launching ? intro.p : f;
   const scale = st && !launching ? lerp(st.A.scale, st.B.scale, ease(f)) : hold.scale;
-  const k1 = Math.ceil(tl.idx - 1e-9), debut = k1 > 0 ? snaps[k1].gaps : null, before = k1 > 0 ? snaps[k1 - 1].gaps : null;
   const act = [];
   for (const c of cars) {
     const p = st ? st.car[c.id] : null, was = c.on;
     c.on = st ? !!p : c.id in hold.y;
-    if (!c.on) { c.ghost = 0; c.fresh = false; c.ahead = null; c.by = 1e5; continue; }
+    if (!c.on) { c.ghost = 0; c.ahead = null; c.by = 1e5; c.wx = c.wy = 0; continue; }
     c.ghost = p ? p.ghost : 0;
-    c.fresh = !!debut && c.id in debut && !(c.id in before);
     c.x = p ? xAt(p, F) : hold.x[c.id];
     c.by = p ? yAt(p, F) : hold.y[c.id];
     c.lane = p ? (F < .5 ? p.sideA : p.sideB) : hold.side[c.id];   // which side its label is on: as in the snapshot the labels describe
     if (intro.p < 1 && !launching && c.id in drive.grid.y) {       // a replay cut short on the grid by a jump elsewhere: roll off it
       const g = ease(intro.p); c.x = lerp(drive.grid.x[c.id], c.x, g); c.by = lerp(drive.grid.y[c.id], c.by, g);
     }
-    if (!was) { c.px = c.x; c.vx = c.ly = 0; c.side = c.lane; L.lh = 0; }   // just arrived: its label has been filled in, measure the labels again
+    if (!was) { c.px = c.x; c.vx = c.ly = c.wvx = c.wvy = 0; c.wx = c.wy = NaN; c.side = c.lane; L.lh = 0; }   // just arrived: its label has been filled in, measure the labels again
     act.push(c);
   }
 
@@ -2182,20 +2390,24 @@ function updateCars(t, dt) {
     if (c.ghost) { c.ahead = null; c.int = 0; } else { c.ahead = prev; c.int = prev ? (c.by - prev.by) / scale : 0; prev = c; }
   });
 
-  // 3. A little life on top: drift, surge, a tilt into every move. In traffic the cars settle
-  //    down, so the clearances the plan keeps are still there once the cars wobble and turn.
-  const w = (reduced ? 0 : TUNING.wobble) * intro.speedF * (L.carLen / 100), tw = t * PACE;
+  // 3. Life on top: drift, surge, a look at the car ahead, a turn of the nose into every move.
+  //    All of it inside the room the plan keeps, see elbowRoom().
+  const u = L.carLen / 100, w = (reduced ? 0 : Math.max(0, +TUNING.wobble || 0)) * intro.speedF, tw = t * (+TUNING.pace > 0 ? +TUNING.pace : 1);
+  elbowRoom(act, w);
   for (const c of act) {
-    let crowd = 0;
-    for (const o of act) if (o !== c) crowd = Math.max(crowd, smooth(L.dy * 1.5, L.dy * 1.04, Math.abs(c.by - o.by)));
-    const k = w * lerp(1, .4, crowd), p = c.ph;
+    const p = c.ph, q = c.fq;
     c.side += (c.lane - c.side) * (1 - Math.exp(-dt * 7));
     c.vx = lerp(c.vx, (c.x - c.px) / Math.max(dt, .001), .18); c.px = c.x;
-    c.wx = (Math.sin(tw * .83 + p[0]) * 2.3 + Math.sin(tw * 2.1 + p[1]) * 1.1) * k * .85;
-    c.wy = (Math.sin(tw * .57 + p[2]) * 4.2 + Math.sin(tw * 1.43 + p[3]) * 2.1 + Math.sin(tw * 3.7 + p[4]) * .6) * k;
-    const wvx = (Math.cos(tw * .83 + p[0]) * 2.3 * .83 + Math.cos(tw * 2.1 + p[1]) * 1.1 * 2.1) * k * .85 * PACE;
-    const lim = lerp(.14, .035, crowd);
-    c.rot = clamp((c.vx + wvx) * .0036, -lim, lim);
+    // three unhurried waves each way, never in step with another car's; along the road a lunge joins them
+    const nx = .52 * Math.sin(tw * .93 * q[0] + p[0]) + .31 * Math.sin(tw * 2.17 * q[1] + p[1]) + .17 * Math.sin(tw * 4.6 * q[2] + p[2]);
+    const ny = .38 * Math.sin(tw * .71 * q[3] + p[3]) + .21 * Math.sin(tw * 1.83 * q[4] + p[4]) + .08 * Math.sin(tw * 4.1 * q[5] + p[5]) - .33 * lunge(c, tw);
+    const wx = nx * c.sx * DRIFT * u * w, wy = ny * c.sy * SURGE * u * w;
+    if (c.wx !== c.wx) { c.wx = wx; c.wy = wy; }           // just arrived: nothing to compare with yet
+    c.wvx = lerp(c.wvx, (wx - c.wx) / dt, .3); c.wvy = lerp(c.wvy, (wy - c.wy) / dt, .3);
+    c.wx = wx; c.wy = wy;
+    // the nose turns into the move, as far as the room allows and never with a jolt
+    const lim = lerp(TURN_TIGHT, TURN_FREE, c.fr);
+    c.rot = lim * Math.tanh((c.vx + c.wvx) * .0038 / u / lim);
     // flames on the overrun, now and then
     if (TUNING.flames && !reduced && intro.speedF > .95 && c.by < H) {
       if (c.ghost > 0 && Math.abs(c.x) > L.dx * 1.15) c.flameEnd = t + .08;   // a newcomer charging up the kerb spits them all the way
@@ -2320,6 +2532,26 @@ function draw(t) {
     ctx.restore();
   }
 
+  // The car this step is about: a pool of its own colour on the road under it, breathing slowly,
+  // and one ring going out from it as the step begins.
+  for (const c of cars) {
+    if (c.hot < .01 || c.by > H + 40) continue;
+    const age = t - ev.t0, breath = reduced ? .85 : .8 + .2 * Math.sin(age * 2.1);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(cx + c.x + c.wx, c.by + c.wy + carLen / 2); ctx.rotate(c.rot);
+    ctx.save(); ctx.scale(carW * 1.5, carLen * .92);
+    const pool = ctx.createRadialGradient(0, 0, .3, 0, 0, 1);
+    pool.addColorStop(0, rgba(c.tint, .6 * c.hot * breath)); pool.addColorStop(.55, rgba(c.tint, .24 * c.hot * breath)); pool.addColorStop(1, rgba(c.tint, 0));
+    ctx.fillStyle = pool; ctx.fillRect(-1, -1, 2, 2); ctx.restore();
+    const ring = age / 1.25;
+    if (ring < 1 && !reduced) {
+      const g = easeOut(ring);
+      ctx.strokeStyle = rgba(c.tint, .7 * c.hot * (1 - ring) * (1 - ring)); ctx.lineWidth = 2.5 - 1.5 * g;
+      ctx.beginPath(); ctx.ellipse(0, 0, carW * (.72 + .85 * g), carLen * (.6 + .5 * g), 0, 0, TAU); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // cars, back of the field first
   for (const c of cars.slice().sort((a, b) => b.by - a.by)) {
     if (c.by > H + 40) continue;
@@ -2379,22 +2611,17 @@ function draw(t) {
 
 function updateLabels() {
   const near = Math.round(tl.idx), dist = Math.abs(tl.idx - near), snap = snaps[near];
-  const noteO = (1 - smooth(.04, .2, dist)).toFixed(2), now = timeAt(tl.idx);
+  // the notes belong to the nearest snapshot: half way between two they change, in a short dip
+  const noteO = (1 - smooth(.3, .47, dist)).toFixed(2), now = timeAt(tl.idx), joining = snaps[Math.min(LAST, Math.ceil(tl.idx))];
   for (const c of cars) {
     if (!c.on) { c.oL = c.oR = 0; continue; }
-    const e = snap.entry[c.id] || {}, who = whoIs(c, now, e);
+    // a lab on its way in has only one thing to say: the note of the snapshot it is joining
+    const e = snap.entry[c.id] || (c.ghost > 0 && joining.entry[c.id]) || {}, who = whoIs(c, now, e);
     useLogo(c, who.logo);
     setText(c, 'pos', 'P' + (c.rank + 1));
     setText(c, 'name', who.name);
-    setText(c, 'gap', c.ghost < 0 ? '' : c.rank ? '+' + c.gap.toFixed(3) : 'LEADER');
-    setText(c, 'int', c.ahead && c.rank > 1 ? 'INT +' + c.int.toFixed(3) : '');
-    setText(c, 'io', c.ghost < 0 ? 'Out' : c.fresh ? (L.mobile ? 'New' : 'New entry') : '');   // phone labels are too narrow for the long one
-    setText(c, 'io:on', c.ghost < 0 || c.fresh);
-    setText(c, 'drs:on', !!c.ahead && c.int < TUNING.drsWindow);
-    setText(c, 'fl:on', c.rank === 0 && c.ghost >= 0);
-    setText(c, 'el:lead', c.rank === 0);
-    setText(c, 'sub', who.sub);
-    setText(c, 'note', e.note || '');
+    setText(c, 'note', c.ghost < 0 ? 'Drops out of the fight.' : e.note || '');
+    setText(c, 'el:gone', c.ghost < 0);
     // a car that is arriving or leaving brings its label in and out with it
     const vis = intro.hud * (1 - smooth(L.bottom - L.carLen * .5, L.bottom + 24, c.by));
     c.oL = clamp((-c.side - .15) / .7, 0, 1) * vis; c.oR = clamp((c.side - .15) / .7, 0, 1) * vis;
@@ -2406,19 +2633,27 @@ function updateLabels() {
     const col = cars.filter(c => c[key] > .5).sort((a, b) => a.by - b.by);
     let edge = -1e9;
     for (const c of col) { c.push = Math.max(0, edge - c.by); edge = c.by + c.push + L.lh; }
-    edge = L.bottom + 22;
+    edge = L.labelEnd;
     for (let k = col.length - 1; k >= 0; k--) { const c = col[k]; c.push = Math.min(c.push, edge - L.lh - c.by); edge = c.by + c.push; }
+  }
+  // Each label eases to its place. One next to a car that is moving fast would lag behind and
+  // slide over the label above it, so that is ruled out afterwards: it is held clear instead.
+  for (const c of cars) if (c.on) c.ly = lerp(c.ly || 0, c.push || 0, .18);
+  for (const key of ['oL', 'oR']) {
+    let edge = -1e9;
+    for (const c of cars.filter(c => c.on && c[key] > .5).sort((a, b) => a.by - b.by)) { c.ly = Math.max(c.ly, edge - c.by); edge = c.by + c.ly + L.lh; }
   }
   for (const c of cars) {
     const l = c.els.left, r = c.els.right;
     if (!c.on) { if (c.cache.vis !== 0) { c.cache.vis = 0; l.el.style.opacity = r.el.style.opacity = 0; } continue; }
     c.cache.vis = 1;
-    c.ly = lerp(c.ly || 0, c.push || 0, .18);
     const y = (c.by - 1 + c.ly).toFixed(1);
     l.el.style.opacity = c.oL.toFixed(2); r.el.style.opacity = c.oR.toFixed(2);
     l.el.style.transform = `translate(${(L.cx - L.edge - L.lw).toFixed(1)}px,${y}px)`;
     r.el.style.transform = `translate(${(L.cx + L.edge).toFixed(1)}px,${y}px)`;
-    l.r3.style.opacity = r.r3.style.opacity = noteO;
+    const no = c.ghost ? '1' : noteO, hot = c.hot.toFixed(2);
+    if (c.cache.no !== no) l.note.style.opacity = r.note.style.opacity = c.cache.no = no;
+    if (c.cache.hot !== hot) { c.cache.hot = hot; l.el.style.setProperty('--hot', hot); r.el.style.setProperty('--hot', hot); }
   }
 }
 
@@ -2430,6 +2665,7 @@ function frame(now) {
   const step = TUNING.speed * (reduced ? .35 : 1) * intro.speedF * dt;
   scroll += step; world += step / L.S;
   updateCars(t, dt);
+  syncEvent(t, dt);
   draw(t);
   updateLabels();
   syncTimelineUI();
@@ -2442,7 +2678,8 @@ updateCars(0, .05);
 for (const c of cars) c.side = c.lane;
 let resizing = 0;
 addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(layout, 90); });
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { L.lh = 0; });
+// The real fonts set the labels, the dates under the timeline and the caption a little differently.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { L.lh = 0; if (measureCaption() !== L.capH) layout(); else thinTicks(); });
 document.body.classList.add('live');
 last = performance.now() / 1000;
 requestAnimationFrame(frame);
@@ -2452,13 +2689,29 @@ requestAnimationFrame(frame);
 window.fastestLab = {
   goTo, play, cars, snaps, labs, PLAYBACK, TUNING, problems,
   plan() { const p = buildPlan(); console.table(p.steps.map((s, i) => ({ to: snaps[i + 1].date, move: +s.move.toFixed(2), hold: +s.hold.toFixed(2) }))); return p; },
-  // The drive plan, measured: per step, the least room between two cars side by side and nose to tail (px,
-  // before wobble), how many samples broke the gaps (should be 0), and which cars had to be retimed.
+  // The drive plan, measured. Per step: the least room between two cars side by side and nose to tail as
+  // planned (px, before wobble), how many samples broke the gaps (should be 0), which cars had to be
+  // retimed, and `worst`: the least room left between two cars at any sample once every car leans as far
+  // towards its neighbours as elbowRoom() lets it, noses turned. That should never be under `clearance`.
   check() {
-    const rows = snaps.map((_, k) => stepPlan(k - 1)).map((st, k) => ({ step: k ? `${snaps[k - 1].date} → ${snaps[k].date}` : 'grid → ' + snaps[0].date,
-      tight: st.tight, sideRoom: +st.sideRoom.toFixed(1), noseRoom: +st.noseRoom.toFixed(1), retimed: st.retimed.join(', ') }));
+    const u = L.carLen / 100, w = Math.max(0, +TUNING.wobble || 0), clearance = Math.max(0, +TUNING.clearance || 0) * L.carLen;
+    const rows = snaps.map((_, k) => stepPlan(k - 1)).map((st, k) => {
+      let worst = Infinity;
+      for (let n = 0; n <= NS; n++) {
+        const list = st.cs.map(c => ({ x: c.xs[n], by: c.ys[n] }));
+        elbowRoom(list, w);
+        for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+          const a = list[i], b = list[j]; if (a.by >= H || b.by >= H) continue;
+          const turn = lerp(TURN_TIGHT, TURN_FREE, a.fr) + lerp(TURN_TIGHT, TURN_FREE, b.fr);
+          worst = Math.min(worst, Math.max(Math.abs(a.x - b.x) - L.carW - (a.sx + b.sx) * DRIFT * u * w - L.carLen / 2 * turn,
+            Math.abs(a.by - b.by) - L.carLen - (a.sy + b.sy) * SURGE * u * w - L.carW / 2 * turn));
+        }
+      }
+      return { step: k ? `${snaps[k - 1].date} → ${snaps[k].date}` : 'grid → ' + snaps[0].date, tight: st.tight, sideRoom: +st.sideRoom.toFixed(1), noseRoom: +st.noseRoom.toFixed(1), worst: +worst.toFixed(1), retimed: st.retimed.join(', ') };
+    });
     console.table(rows);
-    return { ok: rows.every(r => !r.tight), carLen: L.carLen, carW: L.carW, sideGap: L.dx - L.carW, noseGap: L.dy - L.carLen, steps: rows };
+    const worst = Math.min(...rows.map(r => r.worst));
+    return { ok: rows.every(r => !r.tight) && worst >= clearance - .6, carLen: L.carLen, carW: L.carW, sideGap: L.dx - L.carW, noseGap: L.dy - L.carLen, clearance, worst, steps: rows };
   },
   get idx() { return tl.idx; }, set idx(v) { cancelReplay(); tl.anim = null; tl.idx = clamp(+v || 0, 0, LAST); },
   get replaying() { return replay.on; }, get layout() { return L; }, get intro() { return intro; }, get drive() { return drive; },
