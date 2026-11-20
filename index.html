@@ -96,12 +96,25 @@
   #fine { left: max(16px, 2.5vw); }
   #hint { right: max(16px, 2.5vw); text-align: right; }
   #hint kbd { font: inherit; color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 3px; padding: 1px 5px; }
+  #hint { line-height: 2.05; bottom: calc(15px + env(safe-area-inset-bottom)); }
+
+  /* ---------- car-style switch ---------- */
+  #garage { display: inline-flex; align-items: center; gap: 1px; margin: 11px 0 0 -1px; padding: 2px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(12,14,18,.66); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .6s; }
+  body.live #garage { opacity: 1; }
+  #garage span { padding: 1px 5px 0 9px; font: 600 11px/1 var(--font); letter-spacing: .17em; text-transform: uppercase; color: var(--mute); }
+  #garage button { border: 0; background: none; color: var(--mute); cursor: pointer; padding: 6px 10px 5px; border-radius: 999px; font: 700 12px/1 var(--font); letter-spacing: .15em; text-indent: .15em; text-transform: uppercase; transition: color .15s, background .15s; }
+  #garage button:hover { color: #fff; }
+  #garage button[aria-pressed="true"] { color: #fff; background: rgba(182,92,255,.24); box-shadow: inset 0 0 0 1px rgba(182,92,255,.75); }
+  #garage button:focus-visible { outline: 2px solid var(--purple); outline-offset: 1px; }
 
   @media (max-width: 900px) { #fine, #hint { display: none; } }
   @media (max-width: 640px) {
     #brand .sectors { margin: 7px 0 6px 2px; }
     #brand .sectors i { width: 22px; height: 3px; }
     #brand p span { display: none; }
+    #garage { margin-top: 6px; padding: 1px; }
+    #garage span { display: none; }
+    #garage button { padding: 5px 8px 4px; font-size: 11px; }
     #stamp .lights i { width: 8px; height: 8px; }
     #stamp .headline { max-width: 150px; margin-left: auto; }
     .label { padding: 6px 0 4px 8px; }
@@ -120,6 +133,7 @@
   @media (max-height: 560px) {
     #brand p, #stamp .headline, #stamp .lights, .r3, .int, #fine, #hint { display: none; }
     #brand h1 { font-size: 30px; }
+    #garage { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); margin: 0; }
     #stamp .date { margin-top: 0; font-size: 22px; }
     .label, .label.left { padding-top: 5px; padding-bottom: 3px; }
     .pos { font-size: 22px; } .name { font-size: 18px; }
@@ -136,6 +150,7 @@
   <h1>Fastest <em>Lab</em></h1>
   <div class="sectors"><i></i><i></i><i></i></div>
   <p>The AI model grand prix<span> · gaps by vibes</span></p>
+  <div id="garage" role="group" aria-label="Car style"><span aria-hidden="true">Cars</span></div>
 </header>
 
 <div id="stamp">
@@ -157,7 +172,7 @@
   </div>
 </footer>
 <p id="fine">One person's opinion.<br>Gaps are vibes, not benchmarks.</p>
-<p id="hint"><kbd>←</kbd> <kbd>→</kbd> travel in time</p>
+<p id="hint"><kbd>←</kbd> <kbd>→</kbd> travel in time<br><kbd>C</kbd> change cars</p>
 
 <script>
 /* ════════════════════════════════════════════════════════════════════════
@@ -465,12 +480,18 @@ const FWING = (() => { const p = new Path2D(); p.moveTo(-21, -46.4); p.quadratic
 const RWING = rr(-16.2, 41.4, 32.4, 7.6, 1.3);
 
 function buildSprite(c) {
-  const lab = c.lab, u = L.carLen / 100, pad = 20;
+  const u = L.carLen / 100, pad = 20;
   const sw = Math.ceil(L.carW + pad * 2), sh = Math.ceil(L.carLen + pad * 2);
   const cv = document.createElement('canvas'); cv.width = Math.round(sw * DPR); cv.height = Math.round(sh * DPR);
   const g = cv.getContext('2d');
   g.scale(DPR, DPR); g.translate(sw / 2, sh / 2); g.scale(u, u);
   g.lineJoin = 'round'; g.lineCap = 'round';
+  CAR_STYLES[carStyle].paint(g, c, u);
+  c.sprite = cv; c.sw = sw; c.sh = sh;
+}
+
+function paintF1(g, c, u) {
+  const lab = c.lab;
   const body = lab.color, acc = lab.accent, dark = lum(body) < .05, light = lum(body) > .6;
   const stripes = lab.stripes && lab.stripes.length ? lab.stripes : null;
 
@@ -557,9 +578,353 @@ function buildSprite(c) {
   g.strokeStyle = stripes ? 'rgba(255,255,255,.55)' : acc; g.lineWidth = 1; g.beginPath(); g.moveTo(-15, 44.4); g.lineTo(15, 44.4); g.stroke();
   g.fillStyle = '#0b0c0f'; g.fill(rr(-18, 39.6, 2.2, 10.6, .8)); g.fill(rr(15.8, 39.6, 2.2, 10.6, .8));
   if (dark) { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = .6; g.stroke(RWING); }
-
-  c.sprite = cv; c.sw = sw; c.sh = sh;
 }
+function liveF1(c, t, u) {          // the blinking rain light
+  const blink = intro.speedF < .05 ? 1 : (Math.sin(t * 13 + c.ph[5]) > .1 ? 1 : .18);
+  ctx.shadowColor = `rgba(255,30,20,${.9 * blink})`; ctx.shadowBlur = 7 * DPR;
+  ctx.fillStyle = `rgba(255,${40 + 50 * blink | 0},${30 + 30 * blink | 0},${.35 + .65 * blink})`;
+  ctx.fillRect(-1.7 * u, 48.6 * u, 3.4 * u, 1.9 * u);
+}
+function emitF1(c) {                // sparks from the plank
+  for (let n = 0; n < 3; n++) sparks.push({
+    x: L.cx + c.x + c.wx + (Math.random() - .5) * L.carW * .3, y: c.by + c.wy + L.carLen * .86,
+    vx: (Math.random() - .5) * 150, vy: TUNING.speed * (.5 + Math.random() * .5), life: 0, max: .18 + Math.random() * .3 });
+}
+
+/* ---------- more car styles ----------
+   Every style paints into the same 100 × 46 "car unit" box as the F1 car (nose at y = -50), so the
+   gaps, the lanes and the no-overlap rules never need to know which one is on track. A style brings:
+     paint(g, c, u)    the sprite, drawn once
+     live(c, t, u)     per-frame extras over the sprite: lights, moving parts
+     emit(c)           what flies off the car now and then
+     pace, sway, wag   its gait: wobble tempo, lateral wobble width, tail-wag in radians
+     beams             headlights that light the road
+   Pick one with the switch under the wordmark, the C key, or ?cars=f1|gt|toy in the URL. */
+const TAU = Math.PI * 2;
+function groundShadow(g, sil, u) {
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,.62)'; g.shadowBlur = 9 * DPR * u; g.shadowOffsetX = 3 * DPR * u; g.shadowOffsetY = 6.5 * DPR * u;
+  g.fillStyle = '#08090b'; g.fill(sil);
+  g.restore();
+}
+function tyres(g, list, r, treads) {
+  for (const [x, y, w, h] of list) {
+    const gr = g.createLinearGradient(x, 0, x + w, 0);
+    gr.addColorStop(0, '#050506'); gr.addColorStop(.42, '#2c2e34'); gr.addColorStop(1, '#070708');
+    g.fillStyle = gr; g.fill(rr(x, y, w, h, r));
+    g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = .5;
+    g.beginPath(); for (let k = 1; k < treads; k++) { g.moveTo(x + .8, y + h * k / treads); g.lineTo(x + w - .8, y + h * k / treads); } g.stroke();
+  }
+}
+function sheen(g, x, y, rx, ry, hex, a) {      // a soft elliptical highlight
+  g.save(); g.translate(x, y); g.scale(rx, ry);
+  const gr = g.createRadialGradient(0, 0, 0, 0, 0, 1); gr.addColorStop(0, rgba(hex, a)); gr.addColorStop(1, rgba(hex, 0));
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 1, 0, TAU); g.fill();
+  g.restore();
+}
+function bands(g, cols, x, w, y, h) { const bw = w / cols.length; cols.forEach((col, i) => { g.fillStyle = col; g.fillRect(x + i * bw, y, bw + .05, h); }); }
+function poly(g, pts, s = 1) { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(s * x, y) : g.moveTo(s * x, y)); g.closePath(); }
+function roundel(g, c, y, r, ring, lw) {       // the lab's logo on its disc
+  g.fillStyle = c.bbg; g.beginPath(); g.arc(0, y, r, 0, TAU); g.fill();
+  g.strokeStyle = ring; g.lineWidth = lw; g.stroke();
+  drawLogo(g, c.logo, 0, y, r * 2);
+}
+
+/* ---- GT: closed-cockpit endurance racers. Long bonnet, glasshouse, logo on the roof, big wing. ---- */
+const GT_BODY = smoothPath(mirror([[0, -49.9], [7, -49.7], [14.6, -47.8], [19.6, -42.5], [21.6, -34], [20.6, -24], [18.4, -14], [18, 0], [18.8, 10], [21.9, 20], [22.4, 31], [21.2, 38.5], [18.4, 43.8], [9, 44.8], [0, 44.8]]));
+const GT_SPLITTER = smoothPath(mirror([[0, -50.7], [10, -50.6], [18.4, -48.8], [21.6, -43], [20.4, -37], [0, -37]]));
+const GT_GLASS = smoothPath(mirror([[0, -14.6], [9, -14.2], [14.6, -11.6], [15.6, -3], [15, 10], [13.2, 22], [9, 27.4], [0, 28]]));
+const GT_ROOF = smoothPath(mirror([[0, -4.6], [8.5, -4.4], [12.8, -2.8], [13.3, 6], [12.6, 15], [8.5, 16.8], [0, 17]]));
+const GT_WING = rr(-20.6, 45.4, 41.2, 5.2, 1.2);
+const GT_WHEELS = [[-23, -42.5, 8.6, 16.5], [14.4, -42.5, 8.6, 16.5], [-23.2, 18.5, 9.4, 18], [13.8, 18.5, 9.4, 18]];
+
+function paintGT(g, c, u) {
+  const lab = c.lab, body = lab.color, acc = lab.accent, dark = lum(body) < .05, light = lum(body) > .6;
+  const own = lab.stripes && lab.stripes.length ? lab.stripes : null;
+  const seam = dark ? 'rgba(255,255,255,.24)' : 'rgba(0,0,0,.34)';
+  const edge = mix(body, '#000000', light ? .3 : .42), hi = mix(body, '#ffffff', dark ? .2 : light ? .5 : .22);
+  const hiHex = dark ? '#8f98a6' : '#ffffff';
+  const stripes = () => {                          // twin Le Mans stripes, nose to tail
+    if (own) bands(g, own, -5.6, 11.2, -52, 104);
+    else { g.fillStyle = acc; g.fillRect(-5.7, -52, 4.2, 104); g.fillRect(1.5, -52, 4.2, 104); }
+  };
+
+  const sil = new Path2D(); sil.addPath(GT_BODY); sil.addPath(GT_SPLITTER); sil.addPath(GT_WING);
+  groundShadow(g, sil, u);
+
+  // splitter, diffuser, and the tyres that show at the arches
+  g.fillStyle = '#0c0d10'; g.fill(GT_SPLITTER); g.fill(rr(-15.5, 40, 31, 7.6, 1.4));
+  g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = .5; g.stroke(GT_SPLITTER);
+  g.beginPath(); for (let x = -12; x <= 12; x += 4) { g.moveTo(x, 44.8); g.lineTo(x, 47.4); } g.stroke();
+  tyres(g, GT_WHEELS, 2.4, 4);
+
+  // bodywork
+  const bg = g.createLinearGradient(-21.5, 0, 21.5, 0);
+  bg.addColorStop(0, edge); bg.addColorStop(.26, body); bg.addColorStop(.5, hi); bg.addColorStop(.74, body); bg.addColorStop(1, edge);
+  g.fillStyle = bg; g.fill(GT_BODY);
+  g.save(); g.clip(GT_BODY);
+  for (const s of [-1, 1]) {
+    sheen(g, s * 16.2, -33, 4.2, 12, hiHex, dark ? .5 : .42);            // arches catch the floodlights
+    sheen(g, s * 16.8, 29, 4.4, 13, hiHex, dark ? .5 : .42);
+    g.fillStyle = acc; poly(g, [[15.2, -13], [23, -13], [23, 17], [18.6, 17]], s); g.fill();   // sill flashes
+  }
+  stripes();
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(-23, 38.5, 46, 8);         // the tail falls away under the wing
+  g.restore();
+  g.strokeStyle = dark ? 'rgba(255,255,255,.34)' : 'rgba(0,0,0,.38)'; g.lineWidth = .7; g.stroke(GT_BODY);
+
+  // bonnet: shut lines, vents, arch louvres
+  g.strokeStyle = seam; g.lineWidth = .6; g.beginPath();
+  for (const s of [-1, 1]) {
+    g.moveTo(s * 14.2, -13.4); g.quadraticCurveTo(s * 15.4, -30, s * 11.4, -46.6);
+    for (const y of [-37.4, -35, -32.6]) { g.moveTo(s * 16.2, y); g.lineTo(s * 19.6, y + .9); }
+  }
+  g.stroke();
+  for (const s of [-1, 1]) {
+    g.fillStyle = '#08090b'; poly(g, [[7.4, -32], [12.8, -30.4], [12.2, -22.6], [7.8, -24.6]], s); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = .5; g.beginPath();
+    for (const y of [-29, -26.4]) { g.moveTo(s * 7.8, y); g.lineTo(s * 12.4, y + 1.5); }
+    g.stroke();
+  }
+  // headlights (lit in liveGT), tow strap
+  for (const s of [-1, 1]) {
+    g.fillStyle = '#0a0b0e'; poly(g, [[9.8, -48.2], [16, -46.3], [19.2, -40.6], [15.2, -42], [10.4, -45.4]], s); g.fill();
+    g.fillStyle = '#ffdf80'; poly(g, [[11.2, -47.1], [15.5, -45.5], [17.6, -42.2], [15, -43.2], [11.5, -45.9]], s); g.fill();
+  }
+  g.fillStyle = '#e5352e'; g.fill(rr(6, -50.5, 1.8, 2.3, .5));
+
+  // glasshouse: windscreen with its sunstrip, side glass, louvred rear window
+  const gl = g.createLinearGradient(0, -15, 0, 28);
+  gl.addColorStop(0, '#263645'); gl.addColorStop(.3, '#0e141b'); gl.addColorStop(1, '#090c10');
+  g.fillStyle = gl; g.fill(GT_GLASS);
+  g.save(); g.clip(GT_GLASS);
+  g.fillStyle = 'rgba(190,225,255,.2)';
+  poly(g, [[-15.5, -15], [-6, -15], [-11, -3], [-16.5, -3]]); g.fill();
+  poly(g, [[-3, -15], [0, -15], [-5, -3], [-8, -3]]); g.fill();
+  g.fillStyle = acc; g.fillRect(-16, -7.6, 32, 5);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = .7; g.beginPath();
+  for (const y of [20.2, 22.8, 25.4]) { g.moveTo(-11.5, y); g.lineTo(11.5, y); }
+  g.stroke();
+  g.restore();
+  g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = .7; g.stroke(GT_GLASS);
+  g.strokeStyle = mix(body, '#000000', dark ? 0 : light ? .3 : .12); g.lineWidth = 1; g.beginPath();
+  for (const s of [-1, 1]) {                       // pillars
+    g.moveTo(s * 12.2, -3.4); g.lineTo(s * 14.7, -11.6);
+    g.moveTo(s * 13, 5.8); g.lineTo(s * 15.4, 5.8);
+    g.moveTo(s * 12, 15.8); g.lineTo(s * 13.2, 22.6);
+  }
+  g.stroke();
+
+  // roof, stripes over the top, and the logo where the TV helicopter can read it
+  const rg = g.createLinearGradient(-13.3, 0, 13.3, 0);
+  rg.addColorStop(0, mix(body, '#000000', light ? .16 : .26)); rg.addColorStop(.3, body); rg.addColorStop(.5, hi); rg.addColorStop(.7, body); rg.addColorStop(1, mix(body, '#000000', light ? .16 : .26));
+  g.fillStyle = rg; g.fill(GT_ROOF);
+  g.save(); g.clip(GT_ROOF); stripes(); g.restore();
+  g.strokeStyle = seam; g.lineWidth = .6; g.stroke(GT_ROOF);
+  roundel(g, c, 6.2, 9.3, 'rgba(0,0,0,.45)', .6);
+
+  // engine-cover vents, tail lights (lit in liveGT), mirrors
+  for (const s of [-1, 1]) {
+    g.fillStyle = '#08090b';
+    for (const y of [31, 33.8, 36.6]) g.fill(rr(s * 12.4 - 3.2, y, 6.4, 1.4, .6));
+    g.fillStyle = '#4e0b0b'; g.fill(rr(s * 12.5 - 4.3, 41.9, 8.6, 1.8, .7));
+    g.strokeStyle = '#0c0d10'; g.lineWidth = 1; g.beginPath(); g.moveTo(s * 17.6, -11.4); g.lineTo(s * 20.6, -13.4); g.stroke();
+    g.fillStyle = dark ? acc : mix(body, '#000000', .25); g.fill(rr(s * 21.3 - 1.7, -15.6, 3.4, 2.7, 1));
+  }
+
+  // swan-neck rear wing
+  g.strokeStyle = '#0c0d10'; g.lineWidth = 1.5; g.beginPath();
+  for (const s of [-1, 1]) { g.moveTo(s * 7.5, 38.6); g.lineTo(s * 7.5, 46.4); }
+  g.stroke();
+  if (own) { g.save(); g.clip(GT_WING); bands(g, own, -20.6, 41.2, 45, 6); g.restore(); }
+  else { g.fillStyle = mix(body, '#000000', dark ? 0 : .28); g.fill(GT_WING); }
+  g.strokeStyle = own ? 'rgba(255,255,255,.55)' : acc; g.lineWidth = 1; g.beginPath(); g.moveTo(-19.4, 49); g.lineTo(19.4, 49); g.stroke();
+  g.fillStyle = '#0b0c0f'; g.fill(rr(-22.7, 43.4, 2.3, 7.3, .8)); g.fill(rr(20.4, 43.4, 2.3, 7.3, .8));
+  if (dark) { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = .6; g.stroke(GT_WING); }
+}
+function liveGT(c, t, u) {
+  // brake lights: bright while the car is giving ground, dim while it's gaining
+  const tw = t * CAR_STYLES.gt.pace, p = c.ph;
+  const dv = Math.cos(tw * .57 + p[2]) * 2.4 + Math.cos(tw * 1.43 + p[3]) * 3 + Math.cos(tw * 3.7 + p[4]) * 2.2;
+  const b = intro.speedF < .05 ? 1 : smooth(.4, 3, dv);
+  ctx.shadowColor = `rgba(255,30,20,${.45 + .55 * b})`; ctx.shadowBlur = (4 + 6 * b) * DPR;
+  ctx.fillStyle = `rgba(255,${44 + 70 * b | 0},${34 + 46 * b | 0},${.45 + .55 * b})`;
+  ctx.fillRect(-16.6 * u, 42 * u, 8.2 * u, 1.6 * u); ctx.fillRect(8.4 * u, 42 * u, 8.2 * u, 1.6 * u);
+  // headlights, endurance yellow
+  ctx.shadowColor = 'rgba(255,210,100,.95)'; ctx.shadowBlur = (5 + 6 * c.flash) * DPR;
+  ctx.fillStyle = c.flash ? '#ffffff' : '#fff0b8';
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 14.4 * u, -44.6 * u, 2.4 * u, 1.2 * u, s * .62, 0, TAU); ctx.fill(); }
+}
+const flame = f => f > .5 ? `rgba(150,200,255,${f})` : `rgba(255,${110 + 220 * f | 0},40,${Math.min(1, f * 1.8)})`;
+function emitGT(c) {                               // flames on the overrun, from the twin exhausts
+  const u = L.carLen / 100;
+  for (const s of [-1, 1]) sparks.push({ w: 2.6 * u + 1, col: flame, tail: .1,
+    x: L.cx + c.x + c.wx + s * 6.5 * u + (Math.random() - .5) * 1.5 * u, y: c.by + c.wy + L.carLen * 1.07,
+    vx: (Math.random() - .5) * 14, vy: TUNING.speed * (.07 + Math.random() * .09), life: 0, max: .05 + Math.random() * .09 });
+}
+
+// Headlights on the road. One soft twin-cone sprite, added over the asphalt under each car;
+// a car inside the DRS window flashes its lights at the one ahead.
+const beam = { cv: null, key: '', w: 0, h: 0 };
+function drawBeams(t) {
+  if (!CAR_STYLES[carStyle].beams) return;
+  const u = L.carLen / 100, key = L.carLen + '@' + DPR;
+  if (beam.key !== key) {
+    const w = Math.ceil(L.carW * 2.6), h = Math.ceil(L.carLen * 1.1);
+    const cv = document.createElement('canvas'); cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
+    const g = cv.getContext('2d'); g.scale(DPR, DPR); g.translate(w / 2, h); g.scale(u, u);
+    for (const s of [-1, 1]) for (let k = 0; k < 16; k++) {
+      const len = 100 - k * 4.8, spread = 10 + k * 2.6;
+      const gr = g.createLinearGradient(0, 0, 0, -len);
+      gr.addColorStop(0, 'rgba(255,232,170,.045)'); gr.addColorStop(.45, 'rgba(255,232,170,.018)'); gr.addColorStop(1, 'rgba(255,232,170,0)');
+      g.fillStyle = gr;
+      poly(g, [[10.5, 0], [18, 0], [12 + spread, -len], [12 - spread, -len]], s); g.fill();
+    }
+    Object.assign(beam, { cv, key, w, h });
+  }
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const c of cars) {
+    const ph = (t + c.ph[5] * 3) % 6.4;
+    c.flash = c.ahead && c.int < TUNING.drsWindow && intro.hud > .9 && (ph < .11 || (ph > .2 && ph < .31)) ? 1 : 0;
+    if (c.by > H + 40) continue;
+    ctx.save();
+    ctx.translate(L.cx + c.x + c.wx, c.by + c.wy + L.carLen / 2); ctx.rotate(c.rot);
+    ctx.globalAlpha = c.flash ? 1 : .7;
+    ctx.drawImage(beam.cv, -beam.w / 2, -45 * u - beam.h, beam.w, beam.h);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ---- Toy: stubby wind-up racers. Fat tyres, glossy plastic, a big roof roundel, a key in the back. ---- */
+const TOY_BODY = smoothPath(mirror([[0, -49.4], [10, -49.4], [16.8, -47], [17.8, -34], [17.2, -10], [17.2, 8], [18, 24], [17.4, 33], [12, 37], [0, 37]]));
+const TOY_GLASS = smoothPath(mirror([[0, -27], [9.5, -26.5], [14.4, -23], [14.8, -6], [14.4, 13], [10, 19.5], [0, 20]]));
+const TOY_ROOF = smoothPath(mirror([[0, -16.4], [9, -16.2], [12.8, -14], [13, -3], [12.6, 8], [9, 10.4], [0, 10.6]]));
+const TOY_WHEELS = [[-23, -42, 10, 20], [13, -42, 10, 20], [-23, 11, 10, 22], [13, 11, 10, 22]];
+const TOY_SPOILER = rr(-16.4, 25, 32.8, 6.4, 2.6);
+
+function paintToy(g, c, u) {
+  const lab = c.lab, body = lab.color, acc = lab.accent, dark = lum(body) < .05, light = lum(body) > .6;
+  const own = lab.stripes && lab.stripes.length ? lab.stripes : null;
+  const ink = dark ? mix(body, '#ffffff', .32) : mix(body, '#000000', .64);     // the fat moulded outline
+  const stripe = () => { if (own) bands(g, own, -6, 12, -52, 104); else { g.fillStyle = acc; g.fillRect(-5, -52, 10, 104); } };
+  const gleam = (x, y, rx, ry, rot) => { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, TAU); g.fill(); };
+
+  const sil = new Path2D(); sil.addPath(TOY_BODY);
+  for (const [x, y, w, h] of TOY_WHEELS) sil.addPath(rr(x, y, w, h, 3.6));
+  groundShadow(g, sil, u);
+
+  // fat knobbly tyres on a steel axle, chrome bumpers
+  g.fillStyle = '#6f7680'; g.fillRect(-18, -33.2, 36, 2.4); g.fillRect(-18, 20.8, 36, 2.4);
+  for (const [x, y, w, h] of TOY_WHEELS) {
+    const gr = g.createLinearGradient(x, 0, x + w, 0);
+    gr.addColorStop(0, '#08080a'); gr.addColorStop(.5, '#3a3d44'); gr.addColorStop(1, '#08080a');
+    g.fillStyle = gr; g.fill(rr(x, y, w, h, 3.6));
+    g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 1.1; g.beginPath();
+    for (let k = 1; k < 7; k++) { g.moveTo(x + .6, y + h * k / 7); g.lineTo(x + w - .6, y + h * k / 7); }
+    g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = .6; g.stroke(rr(x, y, w, h, 3.6));
+  }
+  const chrome = g.createLinearGradient(-15, 0, 15, 0);
+  chrome.addColorStop(0, '#7d848e'); chrome.addColorStop(.35, '#f4f6f8'); chrome.addColorStop(.6, '#aab0b9'); chrome.addColorStop(1, '#6d737c');
+  g.fillStyle = chrome; g.fill(rr(-15, -50.6, 30, 5.6, 2.4)); g.fill(rr(-14, 33.2, 28, 5.4, 2.2));
+
+  // moulded body: flat colour, one fat stripe, a wet-look gleam
+  const bg = g.createLinearGradient(-18, 0, 18, 0);
+  const edge = mix(body, '#000000', light ? .14 : .26), hi = mix(body, '#ffffff', dark ? .14 : light ? .5 : .14);
+  bg.addColorStop(0, edge); bg.addColorStop(.3, body); bg.addColorStop(.5, hi); bg.addColorStop(.7, body); bg.addColorStop(1, edge);
+  g.fillStyle = bg; g.fill(TOY_BODY);
+  g.save(); g.clip(TOY_BODY);
+  stripe();
+  g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = 4.4; g.stroke(TOY_BODY);
+  g.fillStyle = `rgba(255,255,255,${dark ? .22 : .32})`;
+  gleam(-12, -37, 1.9, 6.5, .1);
+  g.restore();
+  g.strokeStyle = ink; g.lineWidth = 1.5; g.stroke(TOY_BODY);
+
+  // headlights and grille
+  for (const s of [-1, 1]) {
+    g.fillStyle = '#fff3c2'; g.beginPath(); g.arc(s * 10.4, -43.6, 3.5, 0, TAU); g.fill();
+    g.strokeStyle = ink; g.lineWidth = 1.1; g.stroke();
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(s * 10.4 - 1.1, -44.7, 1.1, 0, TAU); g.fill();
+  }
+  g.fillStyle = '#14161a'; g.fill(rr(-4.4, -48, 8.8, 2.5, 1.2));
+
+  // bubble canopy
+  const gl = g.createLinearGradient(0, -27, 0, 20);
+  gl.addColorStop(0, '#3a5873'); gl.addColorStop(.4, '#182736'); gl.addColorStop(1, '#0f1822');
+  g.fillStyle = gl; g.fill(TOY_GLASS);
+  g.save(); g.clip(TOY_GLASS);
+  g.fillStyle = 'rgba(255,255,255,.36)';
+  poly(g, [[-12.5, -27.5], [-6.5, -27.5], [-11.5, -16], [-17.5, -16]]); g.fill();
+  poly(g, [[-4, -27.5], [-2, -27.5], [-7, -16], [-9, -16]]); g.fill();
+  poly(g, [[4, 11], [8.5, 11], [6, 20], [1.5, 20]]); g.fill();
+  g.restore();
+  g.strokeStyle = ink; g.lineWidth = 1.3; g.stroke(TOY_GLASS);
+
+  // roof: the stripe runs over it, the logo sits on top
+  g.fillStyle = mix(body, '#ffffff', dark ? .09 : light ? .35 : .09); g.fill(TOY_ROOF);
+  g.save(); g.clip(TOY_ROOF); stripe(); g.restore();
+  g.strokeStyle = ink; g.lineWidth = 1.3; g.stroke(TOY_ROOF);
+  roundel(g, c, -2.9, 10, 'rgba(0,0,0,.6)', 1);
+
+  // tail lights, slab spoiler, and the stub the key sits on
+  for (const s of [-1, 1]) { g.fillStyle = '#ff4a3d'; g.fill(rr(s * 11 - 2.8, 33, 5.6, 2.2, 1)); }
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.fill(rr(-15.6, 27, 31.2, 6, 2.6));
+  if (own) { g.save(); g.clip(TOY_SPOILER); bands(g, own, -16.4, 32.8, 24, 8); g.restore(); }
+  else { g.fillStyle = dark ? mix(body, '#ffffff', .22) : acc; g.fill(TOY_SPOILER); }
+  g.strokeStyle = ink; g.lineWidth = 1.2; g.stroke(TOY_SPOILER);
+  g.fillStyle = '#9a7a26'; g.beginPath(); g.arc(0, 37.4, 2.7, 0, TAU); g.fill();
+  g.fillStyle = '#d7b451'; g.fill(rr(-1.2, 36.6, 2.4, 7, .8));
+}
+function liveToy(c, t, u) {                        // the wind-up key turns for as long as the road moves
+  const a = scroll * .0085 + c.ph[5], k = Math.abs(Math.cos(a)), r = (1.1 + 3.2 * k) * u, y = 46 * u;
+  ctx.fillStyle = mix('#8a6a1e', '#ffe59a', .5 + .5 * Math.sin(a * 2 + .9));
+  ctx.strokeStyle = '#4a390f'; ctx.lineWidth = .8 * u;
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 3.6 * k * u, y, r, 3.5 * u, 0, 0, TAU); ctx.fill(); ctx.stroke(); }
+  if (k > .4) { ctx.fillStyle = '#3d2f0c'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 3.9 * k * u, y, 1.5 * k * u, 1.5 * u, 0, 0, TAU); ctx.fill(); } }
+}
+function emitToy(c) {                              // flint sparks from the friction motor, in team colours
+  if (Math.random() < .35) return;
+  const pal = c.lab.stripes || [c.tint, c.lab.accent, '#ffd66b'], rgb = hexRgb(pal[(Math.random() * pal.length) | 0]).join(',');
+  sparks.push({ w: 2.4, col: f => `rgba(${rgb},${f})`,
+    x: L.cx + c.x + c.wx + (Math.random() - .5) * L.carW * .4, y: c.by + c.wy + L.carLen * .9,
+    vx: (Math.random() - .5) * 260, vy: TUNING.speed * (.3 + Math.random() * .45), life: 0, max: .22 + Math.random() * .35 });
+}
+
+const CAR_STYLES = {
+  f1:  { label: 'F1',  title: 'Formula 1 cars',      paint: paintF1,  live: liveF1,  emit: emitF1,  pace: 1,   sway: 1,   wag: 0 },
+  gt:  { label: 'GT',  title: 'GT endurance racers', paint: paintGT,  live: liveGT,  emit: emitGT,  pace: .78, sway: .85, wag: 0, beams: true },
+  toy: { label: 'Toy', title: 'Wind-up toy cars',    paint: paintToy, live: liveToy, emit: emitToy, pace: 1.3, sway: .85, wag: .022 },
+};
+const DEFAULT_STYLE = 'f1';
+let carStyle = (new URLSearchParams(location.search).get('cars') || '').toLowerCase();
+if (!CAR_STYLES[carStyle]) carStyle = DEFAULT_STYLE;
+
+const styleBtns = Object.entries(CAR_STYLES).map(([id, s]) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = s.label; b.title = s.title;
+  b.setAttribute('aria-pressed', id === carStyle);
+  b.addEventListener('click', () => setCarStyle(id));
+  $('#garage').appendChild(b);
+  return [id, b];
+});
+function setCarStyle(id) {
+  if (!CAR_STYLES[id] || id === carStyle) return;
+  carStyle = id; sparks.length = 0;
+  for (const [k, b] of styleBtns) b.setAttribute('aria-pressed', k === id);
+  for (const c of cars) buildSprite(c);
+  try {                                            // keep the choice in the URL, so the link is shareable
+    const url = new URL(location.href);
+    if (id === DEFAULT_STYLE) url.searchParams.delete('cars'); else url.searchParams.set('cars', id);
+    history.replaceState(null, '', url);
+  } catch (e) { /* file:// in some browsers: the switch still works */ }
+}
+addEventListener('keydown', e => {
+  if (e.key.toLowerCase() !== 'c' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const ids = Object.keys(CAR_STYLES);
+  setCarStyle(ids[(ids.indexOf(carStyle) + (e.shiftKey ? ids.length - 1 : 1)) % ids.length]);
+});
 
 /* ---------- textures ---------- */
 let asphalt, grass;
@@ -724,17 +1089,23 @@ function updateCars(t, dt) {
   for (const c of cars) {
     c.vx = lerp(c.vx, (c.x - c.px) / Math.max(dt, .001), .18); c.px = c.x;
     // a little life: drift, surge, twitch
-    const w = (reduced ? 0 : TUNING.wobble) * intro.speedF * (L.carLen / 100), p = c.ph;
-    c.wx = (Math.sin(t * .83 + p[0]) * 2.3 + Math.sin(t * 2.1 + p[1]) * 1.1) * w;
-    c.wy = (Math.sin(t * .57 + p[2]) * 4.2 + Math.sin(t * 1.43 + p[3]) * 2.1 + Math.sin(t * 3.7 + p[4]) * .6) * w;
-    const wvx = (Math.cos(t * .83 + p[0]) * 2.3 * .83 + Math.cos(t * 2.1 + p[1]) * 1.1 * 2.1) * w;
-    c.rot = clamp((c.vx + wvx) * .0036, -.14, .14);
-    // sparks from the plank, now and then
+    const st = CAR_STYLES[carStyle], tw = t * st.pace;        // each car style has its own gait
+    const w = (reduced ? 0 : TUNING.wobble) * intro.speedF * (L.carLen / 100), p = c.ph, ws = w * st.sway;
+    c.wx = (Math.sin(tw * .83 + p[0]) * 2.3 + Math.sin(tw * 2.1 + p[1]) * 1.1) * ws;
+    c.wy = (Math.sin(tw * .57 + p[2]) * 4.2 + Math.sin(tw * 1.43 + p[3]) * 2.1 + Math.sin(tw * 3.7 + p[4]) * .6) * w;
+    const wvx = (Math.cos(tw * .83 + p[0]) * 2.3 * .83 + Math.cos(tw * 2.1 + p[1]) * 1.1 * 2.1) * ws * st.pace;
+    // Tilt into the move, but never yaw into a neighbour: the closer a car alongside, the less tilt it gets.
+    let lim = .14;
+    for (const o of cars) {
+      if (o === c) continue;
+      const along = smooth(L.carLen * 1.3, L.carLen * 1.1, Math.abs(c.by + c.wy - o.by - (o.wy || 0)));
+      if (along > 0) lim = Math.min(lim, lerp(.14, clamp((Math.abs(c.x + c.wx - o.x - (o.wx || 0)) - L.carW * 1.02) / (L.carLen * 1.05), 0, .14), along));
+    }
+    c.rot = clamp((c.vx + wvx) * .0036 + Math.sin(t * 6.1 + p[5]) * st.wag * Math.min(1, w), -lim, lim);
+    // sparks from the plank (or whatever this style throws), now and then
     if (TUNING.sparks && !reduced && intro.speedF > .95) {
       if (t > c.sparkAt) { c.sparkEnd = t + .22 + Math.random() * .3; c.sparkAt = t + 3.5 + Math.random() * 8; }
-      if (t < c.sparkEnd) for (let n = 0; n < 3; n++) sparks.push({
-        x: L.cx + c.x + c.wx + (Math.random() - .5) * L.carW * .3, y: c.by + c.wy + L.carLen * .86,
-        vx: (Math.random() - .5) * 150, vy: TUNING.speed * (.5 + Math.random() * .5), life: 0, max: .18 + Math.random() * .3 });
+      if (t < c.sparkEnd) st.emit(c);
     }
   }
   for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life += dt; s.x += s.vx * dt; s.y += s.vy * dt; if (s.life > s.max) sparks.splice(i, 1); }
@@ -816,6 +1187,8 @@ function draw(t) {
   fl.addColorStop(0, 'rgba(255,244,224,.085)'); fl.addColorStop(1, 'rgba(255,244,224,0)');
   ctx.fillStyle = fl; ctx.fillRect(0, 0, W, H);
 
+  drawBeams(t);
+
   // ---- timing graphics ----
   const hud = intro.hud;
   if (hud > .01) {
@@ -858,8 +1231,10 @@ function draw(t) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineWidth = 1.6;
     for (const s of sparks) {
       const f = 1 - s.life / s.max;
-      ctx.strokeStyle = `rgba(255,${150 + 90 * f | 0},${40 + 120 * f * f | 0},${f})`;
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * .018, s.y - s.vy * .018); ctx.stroke();
+      ctx.lineWidth = s.w || 1.6;
+      ctx.strokeStyle = s.col ? s.col(f) : `rgba(255,${150 + 90 * f | 0},${40 + 120 * f * f | 0},${f})`;
+      const tail = s.tail || .018;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * tail, s.y - s.vy * tail); ctx.stroke();
     }
     ctx.restore();
   }
@@ -871,11 +1246,7 @@ function draw(t) {
     ctx.translate(cx + c.x + c.wx, c.by + c.wy + carLen / 2);
     ctx.rotate(c.rot);
     ctx.drawImage(c.sprite, -c.sw / 2, -c.sh / 2, c.sw, c.sh);
-    const blink = intro.speedF < .05 ? 1 : (Math.sin(t * 13 + c.ph[5]) > .1 ? 1 : .18);
-    const u = carLen / 100;
-    ctx.shadowColor = `rgba(255,30,20,${.9 * blink})`; ctx.shadowBlur = 7 * DPR;
-    ctx.fillStyle = `rgba(255,${40 + 50 * blink | 0},${30 + 30 * blink | 0},${.35 + .65 * blink})`;
-    ctx.fillRect(-1.7 * u, 48.6 * u, 3.4 * u, 1.9 * u);
+    CAR_STYLES[carStyle].live(c, t, carLen / 100);
     ctx.restore();
   }
 
@@ -948,8 +1319,8 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {});
 last = performance.now() / 1000;
 requestAnimationFrame(frame);
 
-// tiny handle for the console: fastestLab.goTo(0), fastestLab.play()
-window.fastestLab = { goTo, play, skipIntro: finishIntro, get idx() { return tl.idx; }, set idx(v) { finishIntro(); tl.anim = null; tl.queue = []; tl.idx = clamp(v, 0, LAST); }, cars, snaps };
+// tiny handle for the console: fastestLab.goTo(0), fastestLab.play(), fastestLab.setCars('gt')
+window.fastestLab = { goTo, play, skipIntro: finishIntro, setCars: setCarStyle, get carStyle() { return carStyle; }, get layout() { return L; }, get idx() { return tl.idx; }, set idx(v) { finishIntro(); tl.anim = null; tl.queue = []; tl.idx = clamp(v, 0, LAST); }, cars, snaps };
 })();
 </script>
 </body>
