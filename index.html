@@ -692,7 +692,9 @@ var LOGOS = {
    ════════════════════════════════════════════════════════════════════════ */
 
 const TUNING = {
-  speed: 780,        // road scroll, px per second
+  speed: 10,         // road scroll, in car lengths per second: bigger cars, faster road
+  field: 5,          // cars on track: the top this many of each snapshot. A lab that falls below
+                     // drops back off the screen; the labs listed after them are kept for later.
   flames: true,      // exhaust flames now and then
 
   // How alive the cars are: every car drifts across its lane, surges and falls back, has a look
@@ -921,10 +923,12 @@ for (const s of rawSnaps) {
   const time = parseDate(s.date);
   if (isNaN(time)) { bad(`${what}: "${s.date}" isn't a real date. Write it as YYYY-MM-DD. Snapshot skipped.`); continue; }
   if (snaps.some(x => x.time === time)) { bad(`${what}: there already is a snapshot on that date. This one is skipped.`); continue; }
-  let cum = 0; const gaps = {}, entry = {}, order = [];
+  let cum = 0; const gaps = {}, entry = {}, order = [], beyond = [];
+  const FIELD = Math.max(1, Math.round(+TUNING.field) || Infinity);
   for (const e of s.standings || s.entries || []) {
     if (!labs[e.lab]) { bad(`${what}: unknown lab "${e.lab}". LABS has: ${Object.keys(labs).join(', ')}. Car skipped.`); continue; }
     if (e.lab in gaps) { bad(`${what}: ${e.lab} is listed twice. The second one is skipped.`); continue; }
+    if (order.length >= FIELD) { beyond.push(e.lab); continue; }   // outside the top TUNING.field: off screen
     let gap = 0;
     if (order.length) {                                       // the leader's gap is ignored
       gap = e.gap == null || e.gap === '' ? NaN : +e.gap;
@@ -935,7 +939,7 @@ for (const s of rawSnaps) {
     cum += gap; gaps[e.lab] = cum; entry[e.lab] = e; order.push(e.lab);
   }
   if (!order.length) { bad(`${what}: no cars in it. Snapshot skipped.`); continue; }
-  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum, what,
+  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, beyond, span: cum, what,
     event: s.event == null ? '' : String(s.event).trim().replace(/^@(?=.)/, ''), caption: s.caption == null ? '' : String(s.caption).trim() });
 }
 snaps.sort((a, b) => a.time - b.time);
@@ -946,7 +950,7 @@ snaps.forEach((s, i) => {
   const id = s.event, low = id.toLowerCase(), near = Object.keys(labs).find(k => k.toLowerCase() === low || (low.length > 2 && (k.startsWith(low.slice(0, 4)) || labs[k].eras.some(e => e.name.toLowerCase().replace(/\s/g, '') === low))));
   if (id === '@') bad(`${s.what}: the date line ends in a lone "@". Write the lab's id after it, e.g. @${s.order[0]}, or remove it. No car is highlighted.`);
   else if (!labs[id]) bad(`${s.what}: unknown lab "@${id}" at the end of the date line.${near ? ` Did you mean @${near}?` : ''} LABS has: ${Object.keys(labs).join(', ')}. No car is highlighted.`);
-  else if (!(id in s.gaps) && !(i && id in snaps[i - 1].gaps)) bad(`${s.what}: @${id} isn't on track here: it is in neither this snapshot nor the one before, so there is no car to highlight. List ${id} in the snapshot, or remove @${id}.`);
+  else if (!(id in s.gaps) && !(i && id in snaps[i - 1].gaps)) { if (!s.beyond.includes(id)) bad(`${s.what}: @${id} isn't on track here: it is in neither this snapshot nor the one before, so there is no car to highlight. List ${id} in the snapshot, or remove @${id}.`); }
   else return;
   s.event = '';
 });
@@ -1851,7 +1855,7 @@ function emitFlames(c) {                           // flames on the overrun, fro
   const u = L.carLen / 100;
   for (const s of [-1, 1]) flames.push({ w: 2.6 * u + 1, col: flame, tail: .1,
     x: L.cx + c.x + c.wx + s * 6.5 * u + (Math.random() - .5) * 1.5 * u, y: c.by + c.wy + L.carLen * 1.07,
-    vx: (Math.random() - .5) * 14, vy: TUNING.speed * (.07 + Math.random() * .09), life: 0, max: .05 + Math.random() * .09 });
+    vx: (Math.random() - .5) * 14, vy: roadSpeed() * (.07 + Math.random() * .09), life: 0, max: .05 + Math.random() * .09 });
 }
 
 // Headlights on the road. One soft twin-cone sprite, added over the asphalt under each car;
@@ -2598,8 +2602,9 @@ function syncTimelineUI() {
    Everything here follows from where the plan puts the cars, so it is as repeatable as the plan,
    and frontierLap.check() measures the worst case over the whole timeline.
    ---------------------------------------------------------------------- */
-const DRIFT = 7, SURGE = 9, KERB_PLAY = 3;
-const TURN_TIGHT = .03, TURN_FREE = .12;                // radians
+const DRIFT = 3, SURGE = 9, KERB_PLAY = 3;
+const TURN_TIGHT = .03, TURN_FREE = .09;                // radians
+const roadSpeed = () => (+TUNING.speed > 0 ? +TUNING.speed : 10) * L.carLen;   // px per second
 const BLEND = .5;
 function elbowRoom(list, w) {       // list: cars with x and by. Sets on each: sx, sy (0…1 of DRIFT and SURGE) and fr (0…1 from TURN_TIGHT to TURN_FREE)
   const u = L.carLen / 100, AX = Math.max(1e-3, DRIFT * u * w), AY = Math.max(1e-3, SURGE * u * w), clr = Math.max(0, +TUNING.clearance || 0) * L.carLen;
@@ -2674,15 +2679,17 @@ function updateCars(t, dt) {
     c.side += (c.lane - c.side) * (1 - Math.exp(-dt * 7));
     c.vx = lerp(c.vx, (c.x - c.px) / Math.max(dt, .001), .18); c.px = c.x;
     // three unhurried waves each way, never in step with another car's; along the road a lunge joins them
-    const nx = .52 * Math.sin(tw * .93 * q[0] + p[0]) + .31 * Math.sin(tw * 2.17 * q[1] + p[1]) + .17 * Math.sin(tw * 4.6 * q[2] + p[2]);
-    const ny = .38 * Math.sin(tw * .71 * q[3] + p[3]) + .21 * Math.sin(tw * 1.83 * q[4] + p[4]) + .08 * Math.sin(tw * 4.1 * q[5] + p[5]) - .33 * lunge(c, tw);
+    // sideways only a slow sway: a fast car doesn't shake across the road, it holds its line
+    const nx = .7 * Math.sin(tw * .61 * q[0] + p[0]) + .3 * Math.sin(tw * 1.37 * q[1] + p[1]);
+    const ny = .42 * Math.sin(tw * .71 * q[3] + p[3]) + .25 * Math.sin(tw * 1.83 * q[4] + p[4]) - .33 * lunge(c, tw);
     const wx = nx * c.sx * DRIFT * u * w, wy = ny * c.sy * SURGE * u * w;
     if (c.wx !== c.wx) { c.wx = wx; c.wy = wy; }           // just arrived: nothing to compare with yet
     c.wvx = lerp(c.wvx, (wx - c.wx) / dt, .3); c.wvy = lerp(c.wvy, (wy - c.wy) / dt, .3);
     c.wx = wx; c.wy = wy;
-    // the nose turns into the move, as far as the room allows and never with a jolt
+    // the nose turns into a lane change, as far as the room allows and never with a jolt; the sway
+    // barely turns it, as at speed (heading = sideways speed / road speed)
     const lim = lerp(TURN_TIGHT, TURN_FREE, c.fr);
-    c.rot = lim * Math.tanh((c.vx + c.wvx) * .0038 / u / lim);
+    c.rot = lim * Math.tanh((c.vx * .003 + c.wvx * .0008) / u / lim);
     // flames on the overrun, now and then
     if (TUNING.flames && !reduced && intro.speedF > .95 && c.by < H) {
       if (c.ghost > 0 && Math.abs(c.x) > L.dx * 1.15) c.flameEnd = t + .08;   // a newcomer charging up the kerb spits them all the way
@@ -2912,7 +2919,7 @@ function frame(now) {
   const t = now / 1000, dt = Math.min(.05, Math.max(.001, t - last)); last = t;
   stepReplay(dt);
   stepAnim(now);
-  const step = TUNING.speed * (reduced ? .35 : 1) * intro.speedF * dt;
+  const step = roadSpeed() * (reduced ? .35 : 1) * intro.speedF * dt;
   scroll += step; world += step / L.S;
   updateCars(t, dt);
   syncEvent(t, dt);
