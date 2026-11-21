@@ -47,12 +47,13 @@
   #stamp .demo[hidden] { display: none; }
   #stamp .demo { display: inline-block; margin-top: 6px; font: 600 10px/1 var(--font); letter-spacing: .16em; text-transform: uppercase; color: var(--yellow); border: 1px solid rgba(255,210,63,.45); border-radius: 3px; padding: 3px 5px 2px; transition: opacity .25s; }
 
-  /* ---------- car labels: position, logo, name, and a line or two about the lab ---------- */
+  /* ---------- car labels: compact on every screen. Position and logo, the name under them,
+     and a line or two about the lab. Their width is capped (--lw, set in layout()). ---------- */
   #labels { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
-  .label { position: absolute; left: 0; top: 0; width: var(--lw); padding: 9px 0 9px 12px; opacity: 0; will-change: transform, opacity;
+  .label { position: absolute; left: 0; top: 0; width: var(--lw); padding: 8px 0 8px 11px; opacity: 0; will-change: transform, opacity;
     background: linear-gradient(90deg, rgba(7,9,11,.8), rgba(7,9,11,.45) 55%, rgba(7,9,11,0));
     border-top: 2px solid; border-image: linear-gradient(90deg, var(--tint), transparent 94%) 1; }
-  .label.left { padding: 9px 12px 9px 0; text-align: right;
+  .label.left { padding: 8px 11px 8px 0; text-align: right;
     background: linear-gradient(270deg, rgba(7,9,11,.8), rgba(7,9,11,.45) 55%, rgba(7,9,11,0));
     border-image: linear-gradient(270deg, var(--tint), transparent 94%) 1; }
   /* the lab whose event this step is: its label lights up in its own colour, from the road outwards */
@@ -61,20 +62,20 @@
     border-top: 2px solid var(--tint); }
   .label.left::before { background: linear-gradient(270deg, color-mix(in srgb, var(--tint) 46%, transparent), color-mix(in srgb, var(--tint) 12%, transparent) 46%, transparent 86%); }
   .label > * { position: relative; }
-  .r1 { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
-  .left .r1 { flex-direction: row-reverse; }
-  .pos { font: italic 800 32px/1 var(--font); color: var(--tint); }
-  .badge { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--bbg); display: grid; place-items: center; box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); overflow: hidden; }
+  .r1 { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; white-space: nowrap; }
+  .left .r1 { flex-direction: row-reverse; justify-content: flex-start; }
+  .pos { font: italic 800 29px/1 var(--font); color: var(--tint); }
+  .badge { flex: none; width: 23px; height: 23px; border-radius: 50%; background: var(--bbg); display: grid; place-items: center; box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); overflow: hidden; }
   .badge svg { display: block; overflow: visible; width: calc(var(--ls, .7) * 100%); height: calc(var(--ls, .7) * 100%); }
-  .name { font: italic 700 28px/1 var(--font); text-transform: uppercase; letter-spacing: .01em; }
-  .note { margin-top: 7px; max-width: 27em; font: 400 14.5px/1.36 var(--body); color: #d3d7dd; text-wrap: pretty;
+  .name { flex-basis: 100%; font: italic 700 24px/1 var(--font); text-transform: uppercase; letter-spacing: .01em; }
+  /* the condensed face keeps a note to two calm lines in a narrow label (three on a phone) */
+  .note { margin-top: 6px; font: 500 15.5px/1.22 var(--font); letter-spacing: .012em; color: #d9dce1; text-wrap: pretty;
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  .left .note { margin-left: auto; }
   .note:empty { display: none; }
   .label.gone .note { font-style: italic; color: var(--mute); }       /* a car pulling off: its note says so, quietly */
   /* a crowded field: labels drop the note line so every car keeps its name */
   .dense .note { display: none; }
-  @media (min-width: 641px) { .dense .pos { font-size: 28px; } .dense .name { font-size: 23px; } }
+  @media (min-width: 641px) { .dense .pos { font-size: 26px; } .dense .name { font-size: 21px; } }
 
   /* ---------- replay: a quick dip to black while everything goes back to the grid ---------- */
   #curtain { position: fixed; inset: 0; z-index: 4; background: var(--bg); opacity: 0; pointer-events: none; }
@@ -134,13 +135,11 @@
     #stamp .headline { max-width: 150px; margin-left: auto; }
     .label { padding: 6px 0 6px 8px; }
     .label.left { padding: 6px 8px 6px 0; }
-    .r1 { flex-wrap: wrap; gap: 3px 6px; }
-    .left .r1 { justify-content: flex-start; }
+    .r1 { gap: 3px 6px; }
     .pos { font-size: 25px; }
     .badge { width: 19px; height: 19px; }
-    .name { flex-basis: 100%; font-size: 19px; }
-    /* narrow labels: the condensed face keeps a note to two or three calm lines */
-    .note { margin-top: 5px; font: 500 14px/1.22 var(--font); letter-spacing: .012em; color: #d9dce1; -webkit-line-clamp: 3; }
+    .name { font-size: 19px; }
+    .note { margin-top: 5px; font-size: 14px; -webkit-line-clamp: 3; }
     #deck { padding-right: 14px; }
     #tl .tick { font-size: 12px; letter-spacing: .1em; }
     #cap .plate { gap: 10px; padding: 7px 12px 8px 14px; }
@@ -155,6 +154,7 @@
     .pos { font-size: 22px; } .name { font-size: 18px; }
     .badge { width: 18px; height: 18px; }
   }
+  @media (max-height: 560px) and (min-width: 641px) { .r1 { flex-wrap: nowrap; } .name { flex-basis: auto; } }   /* too low to stack: one row */
 </style>
 </head>
 <body>
@@ -700,17 +700,26 @@ const TUNING = {
   wobble: 1,         // how far: 0 = on rails, 1 = alive, 2 = rookies
   pace: 1,           // how fast: 0.6 = heavy and unhurried, 1 = alive, 1.5 = nervous
 
+  // How big the cars are: their length as a share of the height the field has, from the leader's
+  // nose down to the caption. Phones are the exception: there the width of the screen decides.
+  carSize: 0.16,     // 0.13 = small cars, long gaps; 0.18 = big cars that fill the road
+
   // The gaps are drawn to scale: within one picture, twice the gap is twice the road. How much
   // road a second gets is chosen per snapshot, so that a tight field still uses the height.
+  // One exception: four cars can't sit closer together than a car length (the road seats three
+  // abreast, see below). Where a snapshot packs four cars tighter than that, that pack alone is
+  // opened up just enough, and the rest of that picture closes up a little to make the room. The
+  // numbers on the road still show the real gaps. fastestLab.check() lists those snapshots.
   zoom: 1.75,        // a tight field is stretched up to this many times to fill the screen.
                      // 1 = one fixed scale for the whole timeline (a tight field then sits in the
                      // top half), 3 = every snapshot runs from the top to the bottom.
 
   // The room cars keep around each other, at rest and in every overtake. The road is three such
   // lanes wide, and no car ever shares its lane with a car it isn't clear of nose to tail. That is
-  // what makes "never more than three abreast" a rule and not luck. The cars are sized to fit it:
-  // if a snapshot packs four cars closely, all cars get a little smaller.
-  sideGap: 0.50,     // clear road between two cars side by side, in car widths
+  // what makes "never more than three abreast" a rule and not luck.
+  sideGap: [0.50, 1.00],   // clear road between two cars side by side, in car widths: at least the
+                     // first, and up to the second where the screen is wide enough for a broader
+                     // road. One number = the same on every screen.
   noseGap: 0.25,     // clear road between two cars nose to tail in one lane, in car lengths
   // The wobble lives inside those two gaps. A car with empty road around it moves freely; next to
   // another car, both get only as much drift and surge as leaves `clearance` between them even if
@@ -728,30 +737,45 @@ const TUNING = {
    the cars MOVE to the new standings, then HOLD there so you can read it.
 
    spacing     How the replay's time is shared between the steps:
-               'events'    every step is one event and gets about the same
-                           time, however far apart the dates are: `event`
-                           seconds, of which the last `hold[0]` are the
-                           rest. The timeline shows one evenly spaced mark
-                           per event. `length` and `transition` are not used.
+               'events'    every step is one event, however far apart the
+                           dates are. Its move takes as long as the cars
+                           need to get there calmly (`move`, `topSpeed`,
+                           `sideSpeed`), then the picture rests for
+                           `hold[0]` seconds. The timeline shows one evenly
+                           spaced mark per event. `length` and `transition`
+                           are not used.
                'calendar'  a step lasts in proportion to the real time
                            between its two snapshots (six quiet months take
                            longer than one busy month), and the timeline is
                            a calendar
                'uniform'   every step lasts the same share of `length`, on
                            the calendar timeline
-   event       'events' only. [quietest, busiest] seconds one event gets,
-               move and hold together. The more overtaking in a step, the
-               longer: a step in which a lab joins or leaves, or with three
-               or more overtakes, gets the longest. The caption is on screen
-               for all of it.
+   move        'events' only. [shortest, longest] seconds the cars take to
+               move from one snapshot to the next. How long a step gets
+               within that follows from how far its cars have to go: a
+               small nudge takes the shortest, a big reshuffle (or a lab
+               driving in from behind the field) takes longer, because:
+   topSpeed    'events' only. The fastest any car may travel along the road
+               at the peak of a move, in field heights per second (the
+               field: from the leader's nose down to the caption). 0.25 = a
+               car at full speed would need four seconds from the front to
+               the back. Lower = calmer and a longer replay.
+   sideSpeed   'events' only. The same across the road, in road widths per
+               second: how briskly a car changes lanes at most.
+               Every move eases in and out, so those peaks are only reached
+               in the middle of it. If the longest `move` is too short for
+               a step, the longest `move` wins and that step runs a little
+               faster than the two limits. `fastestLab.check()` lists every
+               step's seconds and peak speeds.
    length      'calendar' and 'uniform'. Seconds the whole drive from first
                to latest snapshot should take (lights and launch come on
                top): 46 = "two years in three quarters of a minute".
    transition  'calendar' and 'uniform'. [shortest, longest] seconds the
                cars take to move from one snapshot to the next. The
                overtakes happen here. Every move eases in and out, so the
-               busiest moment is the middle. The more overtaking, the
-               longer, as for `event`.
+               busiest moment is the middle. The more overtaking in a step,
+               the longer: one in which a lab joins or leaves, or with three
+               or more overtakes, gets the longest.
    hold        [shortest, longest] seconds the picture rests on a snapshot.
                The shortest hold is what keeps close snapshots readable.
 
@@ -771,10 +795,12 @@ const TUNING = {
 
 const PLAYBACK = {
   spacing: 'events',
-  event: [2.5, 3.0],
+  move: [2.2, 9],
+  topSpeed: 0.24,
+  sideSpeed: 0.6,
   length: 46,
   transition: [1.7, 2.8],
-  hold: [1.1, 4],
+  hold: [1.3, 4],
   speed: 1,
   lights: 2.3,
   launch: 3,
@@ -909,9 +935,7 @@ for (const s of rawSnaps) {
     cum += gap; gaps[e.lab] = cum; entry[e.lab] = e; order.push(e.lab);
   }
   if (!order.length) { bad(`${what}: no cars in it. Snapshot skipped.`); continue; }
-  // pack4: the least road any four consecutive cars take up, in seconds. It decides how big the cars can be.
-  const pack4 = Math.min(Infinity, ...order.slice(3).map((id, k) => gaps[id] - gaps[order[k]]));
-  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum, pack4, what,
+  snaps.push({ date: s.date, headline: s.headline || '', demo: !!s.demo, time, gaps, entry, order, span: cum, what,
     event: s.event == null ? '' : String(s.event).trim().replace(/^@(?=.)/, ''), caption: s.caption == null ? '' : String(s.caption).trim() });
 }
 snaps.sort((a, b) => a.time - b.time);
@@ -1052,6 +1076,42 @@ function setText(c, key, value, prop = 'textContent') {
 }
 
 /* ---------- layout ---------- */
+// Where one snapshot's cars sit along the road: px below the leader's nose, front first.
+// g: their gaps to the leader in seconds, px: the road a second gets, room: the road there is,
+// apart: pairs of places [i, j] that have to be at least `need` px apart (see layout()). To scale
+// wherever that leaves those pairs their room; a pack that is tighter is opened up just far
+// enough, its own gaps keeping their proportions, and if the field no longer fits then,
+// everything else closes up by one common factor. `open` says how far the tightest pack had to be
+// opened (1 = the picture is to scale), `shrink` how far the rest closed up.
+function roadMap(g, px, apart, need, room) {
+  const d0 = g.slice(1).map((v, k) => (v - g[k]) * px), sum = d => d.reduce((a, b) => a + b, 0);
+  const fit = shrink => {
+    const d = d0.map(v => v * shrink);
+    for (const [i, j] of apart) {                       // front to back: opening one pack never closes another
+      let s = 0; for (let q = i; q < j; q++) s += d[q];
+      if (s < need) for (let q = i; q < j; q++) d[q] = s < 1e-6 ? need / (j - i) : d[q] * need / s;
+    }
+    return d;
+  };
+  let d = fit(1), shrink = 1;
+  if (sum(d) > room + .01) {
+    let a = 0, b = 1;
+    for (let it = 0; it < 40; it++) { const m = (a + b) / 2; if (sum(fit(m)) > room) b = m; else a = m; }
+    d = fit(shrink = a);
+  }
+  const y = [0];
+  for (const v of d) y.push(y[y.length - 1] + v);
+  return { y, g, px, shrink, open: Math.max(1, ...d.map((v, k) => d0[k] > 1e-6 ? v / d0[k] : 1)) };
+}
+// The other way round, for the gap numbers on the road: px below the leader's nose → seconds.
+function secAt(m, y) {
+  const n = m.y.length;
+  if (n < 2 || y <= 0) return y / m.px;
+  if (y >= m.y[n - 1]) return m.g[n - 1] + (y - m.y[n - 1]) / m.px;
+  let k = 1; while (m.y[k] < y) k++;
+  const y0 = m.y[k - 1], y1 = m.y[k];
+  return y1 - y0 < 1e-6 ? m.g[k] : m.g[k - 1] + (m.g[k] - m.g[k - 1]) * (y - y0) / (y1 - y0);
+}
 const GRID_ROW = 0.66;              // grid rows, in car lengths: two staggered columns, every car clear of the one ahead in its column
 function layout() {
   W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -1062,34 +1122,62 @@ function layout() {
   const capH = measureCaption();                        // the tallest caption at this width: the field ends above it
   const bottom = H - (capH ? 88 + capH : short ? 82 : mobile ? 92 : 98);   // last car's tail: above the caption, or else the timeline
   const usable = Math.max(150, bottom - top);
-  const lanes = 3.3 + 2 * TUNING.sideGap;               // the road, in car widths: three abreast, the gaps between them, a little verge
-  let carLen = clamp(usable * 0.152, 30, 122);
+  // The cars are as long as the height allows (TUNING.carSize), the road as wide as three of them
+  // side by side with the gaps between them. A narrow screen turns that round: the labels need
+  // their width first, the road gets the rest, and the cars are sized to fit it.
+  const [gapMin, gapMax] = range(TUNING.sideGap);
   const kerbW = mobile ? 7 : 10;
-  const labelMin = mobile ? 106 : 150;
-  carLen = Math.min(carLen, Math.max(30, (W - 2 * labelMin - 2 * kerbW - 16) / lanes / 0.46));
-  // Road per second of gap, as a share of the free height. One scale for the whole timeline would
-  // leave a tight field bunched up at the top, so each snapshot is stretched to fill the screen,
-  // as far as `zoom` allows. Within a snapshot the gaps stay to scale.
-  const share = s => Math.min(Math.max(1, TUNING.zoom), MAX_SPAN / Math.max(s.span, 1e-6)) / MAX_SPAN;
-  // Never four abreast, part one: no snapshot may put four cars within one car length (plus the
-  // nose-to-tail gap) of road. The tightest pack of four on the whole timeline sets the car size.
-  const pack = Math.min(...snaps.map(s => s.pack4 * share(s)));
-  if (isFinite(pack)) carLen = Math.min(carLen, pack * usable / (1 + TUNING.noseGap + pack) - 1);
-  carLen = Math.max(22, carLen);
+  const labelMin = mobile ? 112 : 150;
+  const room = W - 2 * labelMin - 2 * kerbW - 16;       // the most the road may take
+  const carLen = Math.max(22, Math.min(clamp(usable * clamp(+TUNING.carSize || .16, .08, .22), 30, 150), Math.max(30, room / (3.3 + 2 * gapMin) / 0.46)));
   const carW = carLen * 0.46;
+  const sideGap = clamp((room / carW - 3.3) / 2, gapMin, gapMax);   // a wide screen opens the lanes up
+  const lanes = 3.3 + 2 * sideGap;                      // the road, in car widths: three abreast, the gaps between them, a little verge
   const roadHalf = carW * lanes / 2;
   const side = W / 2 - roadHalf - kerbW;
-  const S = carLen / 100, z0 = roadHalf + kerbW, lw = Math.min(mobile ? 150 : 310, side - (mobile ? 8 : 18));
+  // Labels are compact on every screen: position and logo, the name under them, a short note.
+  const S = carLen / 100, z0 = roadHalf + kerbW, lw = Math.min(mobile ? 150 : clamp(W * .12, 176, 204), side - (mobile ? 8 : 18));
   const roomy = side - lw - 19 >= 96 * S;               // is there room for scenery outside the labels?
   const free = usable - carLen;
   const gridCars = snaps[0].order.length;
-  const dx = carW * (1 + TUNING.sideGap);               // centre to centre, two cars side by side
+  const dx = carW * (1 + sideGap);                      // centre to centre, two cars side by side
   const dy = carLen * (1 + TUNING.noseGap);             // nose to nose, two cars in one lane
   const xpin = Math.max(dx, roadHalf - carW * .21);     // the kerb line, outside wheels over the kerb: where cars join and retire
+  // Road per second of gap, as a share of the free height. One scale for the whole timeline would
+  // leave a tight field bunched up at the top, so each snapshot is stretched to fill the screen,
+  // as far as `zoom` allows. Within a snapshot the gaps stay to scale...
+  const share = s => Math.min(Math.max(1, TUNING.zoom), MAX_SPAN / Math.max(s.span, 1e-6)) / MAX_SPAN;
+  // ...with two exceptions, both for "never four abreast". Four cars may not sit within one car
+  // length (plus the nose-to-tail gap) of road. And a car that has to get past three others on its
+  // way to the next snapshot (an overtake, or a lab driving in or out past the cars behind its
+  // place) must not find those three abreast, at either end of the step. A pack tighter than that
+  // is opened up, see roadMap(). The second rule depends on where the first one puts the cars, so
+  // it is applied until nothing new turns up.
+  const need = dy + 1, apart = snaps.map(s => s.order.slice(3).map((_, k) => [k, k + 3]));
+  const mapsOf = () => snaps.map((s, i) => roadMap(s.order.map(id => s.gaps[id]), free * share(s), apart[i].slice().sort((p, q) => p[1] - q[1] || p[0] - q[0]), need, free));
+  let maps = mapsOf();
+  for (let round = 0, more = true; more && round < 6; round++) {
+    more = false;
+    for (let k = 0; k < LAST; k++) {
+      const a = snaps[k], b = snaps[k + 1], ra = id => a.order.indexOf(id), rb = id => b.order.indexOf(id);
+      for (const x of new Set([...a.order, ...b.order])) {
+        const xa = ra(x), xb = rb(x);
+        const passed = a.order.filter(id => id !== x && rb(id) >= 0 && (xa < 0 ? rb(id) > xb : xb < 0 ? ra(id) > xa : (ra(id) - xa) * (rb(id) - xb) < 0));
+        for (let p = 0; p < passed.length; p++) for (let q = p + 1; q < passed.length; q++) for (let r = q + 1; r < passed.length; r++) {
+          const ends = [[maps[k], ra, apart[k]], [maps[k + 1], rb, apart[k + 1]]].map(([m, rank, list]) => {
+            const at = [passed[p], passed[q], passed[r]].map(rank), i = Math.min(...at), j = Math.max(...at);
+            return { i, j, list, tight: m.y[j] - m.y[i] < need - .01 };
+          });
+          if (ends[0].tight && ends[1].tight) for (const e of ends) if (!e.list.some(v => v[0] === e.i && v[1] === e.j)) { e.list.push([e.i, e.j]); more = true; }
+        }
+      }
+    }
+    if (more) maps = mapsOf();
+  }
   L = {
-    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2, S, z0, dx, dy, xpin,
+    mobile, top, bottom, carLen, carW, kerbW, roadHalf, cx: W / 2, S, z0, dx, dy, xpin, sideGap, free,
     scale: free / MAX_SPAN,                             // px per second of gap before any zoom...
-    scales: snaps.map(s => free * share(s)),            // ...and what each snapshot really gets
+    maps,                                               // ...and where each snapshot really puts its cars
     // The barrier line. Roomy: just outside the labels, so the busy scenery never sits under them.
     // Otherwise it shares the side with the labels, dimmed, and each label gets a darker plate.
     zo: roomy ? z0 + lw + 19 : z0 + side * .4, dim: roomy ? 0 : .45,
@@ -1105,7 +1193,7 @@ function layout() {
   };
   labelsEl.style.setProperty('--lw', L.lw + 'px');
   // When a side can't hold a full label for every other car, labels drop their note line.
-  L.dense = Math.ceil(MAX_CARS / 2) * (mobile ? 100 : 98) > usable * .94;
+  L.dense = Math.ceil(MAX_CARS / 2) * (mobile ? 100 : 118) > usable * .94;
   labelsEl.classList.toggle('dense', L.dense);
   buildDrive();
   for (const c of cars) buildSprites(c);
@@ -1137,13 +1225,17 @@ function layout() {
    to get past a pair that stays side by side) is retimed: some cars set off a little later or
    arrive a little earlier. If even that fails the console names the step. fastestLab.check()
    measures the whole timeline.
+
+   How long a step takes ('events' replay): as long as it needs for nobody to go faster than
+   PLAYBACK.topSpeed along the road or PLAYBACK.sideSpeed across it, see calmPace(). A retimed
+   step takes longer for it: its cars do their driving one after the other.
    ---------------------------------------------------------------------- */
 const NS = 200;                     // samples per step
-const LANE_QUICK = 0.42, LANE_SLOW = 1.0;   // seconds a lane change takes: when traffic leaves no more time, and when there is plenty
+const LANE_QUICK = EVENTS ? 0.8 : 0.42, LANE_SLOW = EVENTS ? 1.8 : 1.0;   // seconds a lane change takes: when traffic leaves no more time, and when there is plenty
 const OVER = 1.5, AWAY1 = ease(1 / OVER);
 const easeAway = t => ease(t / OVER) / AWAY1;           // sets off gently, still moving at the end: a car dropping off the screen
 const easeHome = t => 1 - easeAway(1 - t);              // arrives at speed, settles gently: a car coming onto it
-const WINDOWS = [[0, 1], [0, .85], [.15, 1], [0, .7], [.3, 1], [0, .58], [.42, 1]];   // when a car may do its moving, as shares of the step
+const WINDOWS = [[0, 1], [0, .85], [.15, 1], [0, .7], [.3, 1], [0, .58], [.42, 1], [0, .5], [.5, 1]];   // when a car may do its moving, as shares of the step (the last two: one after the other)
 let drive = { holds: [], plans: [], grid: null, issues: '' };
 
 // Along the road: from A to B inside the car's own window of the step.
@@ -1163,7 +1255,7 @@ function xAt(c, f) {
 // where the field is strung out, three lanes where it bunches up, the tidy stagger (P1 left, P2
 // right, ...) when nothing speaks against it, and labels that have room next to their cars.
 function holdOptions(ys) {          // ys: noses, front first
-  const n = ys.length, pick = [], side = [], labelH = L.mobile ? 100 : L.dense ? 60 : 98;
+  const n = ys.length, pick = [], side = [], labelH = L.mobile ? 100 : L.dense ? 66 : 118;
   let best = Infinity, out = [];
   const go = (i, cost, keep) => {
     if (cost >= (keep ? best + 5.01 : best)) return;
@@ -1188,7 +1280,7 @@ function holdOptions(ys) {          // ys: noses, front first
 // from one snapshot to the next can't swap sides on the way, so they must not be asked to. The
 // timeline starts on the grid, whose seating is given: the first snapshot has to be reachable from it.
 function holdPoses() {
-  const ys = snaps.map((s, i) => s.order.map(id => L.top + s.gaps[id] * L.scales[i]));
+  const ys = snaps.map((s, i) => L.maps[i].y.map(v => L.top + v));
   const opts = ys.map(holdOptions);
   let cost = [0], back = [];
   let was = { order: snaps[0].order, ys: snaps[0].order.map((_, r) => L.gridTop + r * L.carLen * GRID_ROW), opts: [{ m: snaps[0].order.map((_, r) => r % 2 ? 1 : -1) }] };
@@ -1232,7 +1324,7 @@ function holdPoses() {
   for (let i = snaps.length - 1; i >= 0; i--) {
     const s = snaps[i], m = opts[i][v].m, y = {}, x = {}, side = {};
     s.order.forEach((id, r) => { y[id] = ys[i][r]; x[id] = m[r] * L.dx / 2; side[id] = Math.sign(m[r]) || (r % 2 ? 1 : -1); });
-    poses[i] = { y, x, side, scale: L.scales[i] };
+    poses[i] = { y, x, side, map: L.maps[i] };
     v = back[i][v];
   }
   return poses;
@@ -1240,7 +1332,7 @@ function holdPoses() {
 function gridPose(s) {              // the first snapshot's cars on the grid
   const y = {}, x = {}, side = {};
   s.order.forEach((id, r) => { side[id] = r % 2 ? 1 : -1; x[id] = side[id] * L.dx / 2; y[id] = L.gridTop + r * L.carLen * GRID_ROW; });
-  return { y, x, side, scale: L.scales[0] };
+  return { y, x, side, map: L.maps[0] };
 }
 
 const POW = [1, 7, 49, 343], SWITCH = .25;
@@ -1264,7 +1356,7 @@ function roadKit() {                // the places across the road, and how the p
   });
   return { h, SX, CLASH, FROM };
 }
-function* planStep(A, B, kit, secs) {   // secs: how long the step plays. A generator: it pauses between attempts, so planning never holds up a frame for long
+function* planStep(A, B, kit, secs, calm) {   // secs: how long the step plays (with `calm`: at least; see the end). A generator: it pauses between attempts, so planning never holds up a frame for long
   const { h, SX, CLASH, FROM } = kit;
   const slot = x => SX.reduce((b, v, k) => Math.abs(v - x) < Math.abs(SX[b] - x) ? k : b, 0);
   const cs = labIds.filter(id => id in A.y || id in B.y).map(id => ({ id, ghost: !(id in A.y) ? 1 : !(id in B.y) ? -1 : 0 }));
@@ -1459,10 +1551,14 @@ function* planStep(A, B, kit, secs) {   // secs: how long the step plays. A gene
     const bad = yield* lateral(3);
     if (bad < r.score) { r.score = bad; r.mask = blame(); r.rs = cs.map(c => c.rs.slice()); }
   }
+  // If nothing works at the pace asked for, allow quicker lane changes. Those then come one place
+  // at a time, with a pause as long as the move itself: a quick move across several lanes at once
+  // would be a dart, however the step is timed.
   let best;
-  for (const quick of [kmin, Math.round((kmin + 8) / 2), 8]) {   // if nothing works at the pace asked for, allow quicker lane changes
-    if (best && (!best.score || quick >= kmin)) break;
-    kmin = quick; R = kmin + 1; GAP = Math.max(1, Math.round(kmin / 3)); known.clear(); tried = 0;
+  const mid = Math.round((kmin + 8) / 2), tiers = [[kmin, GAP]].concat(kmin > 8 ? (mid > 8 && mid < kmin ? [[mid, mid]] : []).concat([[8, 8]]) : []);
+  for (const [quick, pause] of tiers) {
+    if (best && !best.score) break;
+    kmin = quick; R = kmin + 1; GAP = pause; known.clear(); tried = 0;
     best = yield* assess(cs.map(() => 0));
     yield* dig(best);
     for (let depth = 0, beam = [best]; best.score && depth < 5 && tried < 90; depth++) {
@@ -1510,15 +1606,39 @@ function* planStep(A, B, kit, secs) {   // secs: how long the step plays. A gene
     if (ay < L.dy - .5 && ax < L.dx - .5) tight++;
     if (ay < L.carLen) sideRoom = Math.min(sideRoom, ax - L.carW); else if (ax < L.carW) noseRoom = Math.min(noseRoom, ay - L.carLen);
   }
-  return { car, cs, A, B, tight, sideRoom, noseRoom, tried, kmin, kmax, retimed: cs.filter((c, i) => best.w[i]).map(c => `${c.id} ${c.a}–${c.b}`) };
+  // The fastest anyone goes while on screen, along the road and across it, in px per whole step.
+  // A calm step is given the time that keeps both under the limits; a car that had to be retimed
+  // does its driving in a part of the step, so that can be more than the estimate it started with.
+  let along = 0, across = 0;
+  for (const c of cs) for (let k = 0; k < NS; k++) if (Math.min(c.ys[k], c.ys[k + 1]) < H) {
+    along = Math.max(along, Math.abs(c.ys[k + 1] - c.ys[k]) * NS); across = Math.max(across, Math.abs(c.xs[k + 1] - c.xs[k]) * NS);
+  }
+  if (calm) secs = clamp(Math.max(along / calm.along, across / calm.across), calm.min, calm.max);
+  return { car, cs, A, B, tight, sideRoom, noseRoom, tried, kmin, kmax, secs, along: along / secs, across: across / secs, retimed: cs.filter((c, i) => best.w[i]).map(c => `${c.id} ${c.a}–${c.b}`) };
 }
 
 // The holds are worked out at once. The steps between them are planned when first needed, or a
 // few milliseconds at a time once the page has drawn, whichever comes first.
+// 'events': a step's move takes as long as its cars need to get there calmly. The limits, in px
+// per second for this screen, and a first estimate per step: everyone moving for the whole step,
+// in and out with ease() (peak 1.875 times the average; a lab driving in or out: 1.25 times).
+function calmPace() {
+  const [m0, m1] = range(PLAYBACK.move ?? [2.2, 9]), min = Math.max(.3, m0);
+  return { min, max: Math.max(min, m1), along: Math.max(.02, +PLAYBACK.topSpeed || .24) * (L.bottom - L.top), across: Math.max(.05, +PLAYBACK.sideSpeed || .6) * L.roadHalf * 2 };
+}
+function calmSecs(A, B, calm) {
+  let need = 0;
+  for (const id of labIds) {
+    const a = id in A.y, b = id in B.y;
+    if (a || b) need = Math.max(need, a && b ? 1.875 * Math.abs(B.y[id] - A.y[id]) : 1.25 * (L.yOff - (a ? A.y[id] : B.y[id])));
+  }
+  return clamp(need / calm.along, calm.min, calm.max);
+}
 function buildDrive() {
-  const holds = holdPoses();
-  drive = { holds, grid: gridPose(snaps[0]), kit: roadKit(), plans: [], jobs: [], issues: drive.issues, run: (drive.run || 0) + 1,
-    secs: [Math.max(.5, PLAYBACK.launch), ...buildPlan().steps.map(s => s.move)] };
+  const holds = holdPoses(), calm = EVENTS ? calmPace() : null;
+  drive = { holds, grid: gridPose(snaps[0]), kit: roadKit(), plans: [], jobs: [], issues: drive.issues, run: (drive.run || 0) + 1, calm,
+    // seconds per step, [0] is the launch. 'events': an estimate until the step is planned, see stepSecs()
+    secs: [Math.max(.5, PLAYBACK.launch), ...(calm ? holds.slice(1).map((B, k) => calmSecs(holds[k], B, calm)) : buildPlan().steps.map(s => s.move))] };
   const run = drive.run, ahead = () => {
     if (run !== drive.run) return;
     for (const t0 = performance.now(); performance.now() - t0 < 6;) {
@@ -1534,9 +1654,18 @@ function buildDrive() {
   setTimeout(ahead, 60);
 }
 function stepPlan(k, aBit) {        // the step from snapshot k to k + 1; -1 is the launch off the grid. aBit: only work on it for a moment
-  const job = drive.jobs[k + 1] || (drive.jobs[k + 1] = planStep(k < 0 ? drive.grid : drive.holds[k], drive.holds[k + 1], drive.kit, drive.secs[k + 1]));
+  const job = drive.jobs[k + 1] || (drive.jobs[k + 1] = planStep(k < 0 ? drive.grid : drive.holds[k], drive.holds[k + 1], drive.kit, drive.secs[k + 1], k < 0 ? null : drive.calm));
   while (!drive.plans[k + 1]) { const r = job.next(); if (r.done) drive.plans[k + 1] = r.value; else if (aBit) break; }
   return drive.plans[k + 1];
+}
+// Seconds the move from snapshot k to k + 1 takes: what its plan says once there is one.
+const stepSecs = k => (drive.plans[k + 1] || {}).secs ?? drive.secs[k + 1];
+// ...and the drive between any two points of the timeline, in ms: stepping by hand goes at replay pace.
+function driveMs(a, b) {
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  let t = 0;
+  for (let i = Math.max(0, Math.floor(lo)); i < hi && i < LAST; i++) t += (Math.min(hi, i + 1) - Math.max(lo, i)) * stepSecs(i);
+  return t * 1000;
 }
 
 /* ---------- car sprites (drawn once, top-down, nose up) ---------- */
@@ -2337,10 +2466,11 @@ const idxOfShown = v => {           // the other way round, for the scrubber
   return i + (a + b) / 2;
 };
 function animTo(to, dur) { tl.anim = { from: tl.idx, to, t0: performance.now(), dur }; }
+const settle = () => { const to = Math.round(tl.idx); animTo(to, clamp(driveMs(tl.idx, to), 300, 3000)); };   // on to the nearest snapshot
 function goTo(i, dur) {
   cancelReplay();
   i = clamp(i, 0, LAST);
-  animTo(i, dur ?? clamp(Math.abs(i - tl.idx) * 2200, 500, 5000));
+  animTo(i, dur ?? clamp(driveMs(tl.idx, i), 500, 6000));
 }
 function stepAnim(now) {
   if (!tl.anim) return;
@@ -2357,10 +2487,10 @@ const DIP = 0.45;                   // seconds to fade to black (and back) aroun
 const replay = { on: false, t: 0, onGrid: false, plan: null };
 const range = v => { const [a, b] = [].concat(v).map(Number); return [Math.max(0, a || 0), Math.max(a || 0, b ?? a ?? 0)]; };
 
-// PLAYBACK → seconds per step. 'events': every step gets `event` seconds, the busier the longer,
-// the last `hold[0]` of them at rest. Otherwise each step gets a share of `length` (by calendar
-// time or evenly), kept between shortest and longest move + hold; the factor is searched so the
-// total hits `length`.
+// PLAYBACK → seconds per step. 'events': every step moves for as long as its cars need (see
+// calmPace(); final once the step is planned, an estimate until then), then rests `hold[0]`.
+// Otherwise each step gets a share of `length` (by calendar time or evenly), kept between shortest
+// and longest move + hold; the factor is searched so the total hits `length`.
 function buildPlan() {
   const [t0, t1] = range(PLAYBACK.transition), [h0, h1] = range(PLAYBACK.hold);
   // How busy a step is, 0…1: 1 from three overtakes up, or when a lab joins or leaves (that car has
@@ -2372,10 +2502,8 @@ function buildPlan() {
     return Math.min(1, passes / 3);
   });
   let steps;
-  if (EVENTS) {
-    const [e0, e1] = range(PLAYBACK.event ?? [2.3, 3]);
-    steps = busy.map(v => { const s = Math.max(.5, lerp(e0, e1, v)), hold = Math.min(h0, s * .55); return { move: s - hold, hold }; });
-  } else {
+  if (EVENTS) steps = busy.map((_, k) => ({ move: stepSecs(k), hold: h0, set: !!drive.plans[k + 1] }));
+  else {
     const hi = Math.max(.2, t0 + h0, t1 + h1);
     const w = snaps.slice(1).map((s, k) => PLAYBACK.spacing === 'uniform' ? 1 : Math.max(1, s.time - snaps[k].time));
     const m0 = busy.map(v => lerp(t0, t1, v));             // the more overtaking in a step, the longer its transition
@@ -2386,8 +2514,8 @@ function buildPlan() {
     steps = w.map((x, k) => { const s = clamp(b * x, lo(k), hi), move = Math.max(.1, clamp(s - h0, m0[k], t1)); return { move, hold: Math.max(0, s - move) }; });
   }
   const first = clamp(h0, .8, 1.6);                     // rest on the first standings after the launch
-  const drive = steps.reduce((n, s) => n + s.move + s.hold, 0);
-  return { steps, first, drive, total: DIP * 2 + .2 + PLAYBACK.lights + PLAYBACK.launch + first + drive, speed: SPEED };
+  const driving = steps.reduce((n, s) => n + s.move + s.hold, 0);
+  return { steps, first, drive: driving, total: DIP * 2 + .2 + PLAYBACK.lights + PLAYBACK.launch + first + driving, speed: SPEED };
 }
 function toGrid() {                 // under the black: everything back to the start line
   tl.idx = 0; tl.anim = null; scroll = 0; setWorld(0); flames.length = 0;
@@ -2398,7 +2526,7 @@ function setCurtain(v) { v = clamp(v, 0, 1).toFixed(2); if (curtainEl.style.opac
 function cancelReplay() { if (!replay.on) return; replay.on = false; setCurtain(0); }
 function play() {
   if (LAST < 1) return;
-  if (replay.on) { cancelReplay(); animTo(Math.round(tl.idx), 700); return; }      // the same button stops it
+  if (replay.on) { cancelReplay(); settle(); return; }                             // the same button stops it
   tl.anim = null; tl.dragging = false;
   replay.on = true; replay.t = 0; replay.onGrid = false; replay.plan = buildPlan();
 }
@@ -2418,6 +2546,7 @@ function stepReplay(dt) {
   tl.idx = 0;
   for (let i = 0; i < plan.steps.length && r > 0; i++) {
     const s = plan.steps[i];
+    if (EVENTS && !s.set) { s.move = stepPlan(i).secs; s.set = true; }   // about to be driven: its plan is needed now anyway
     if (r < s.move) { tl.idx = i + r / s.move; return; }
     tl.idx = i + 1; r -= s.move;
     if (r < s.hold) return;
@@ -2427,7 +2556,7 @@ function stepReplay(dt) {
 }
 
 scrub.addEventListener('input', () => { cancelReplay(); tl.anim = null; tl.dragging = true; tl.idx = idxOfShown(posToIdx(scrub.value / 1000)); });
-const release = () => { if (!tl.dragging) return; tl.dragging = false; animTo(Math.round(tl.idx), 600); };
+const release = () => { if (!tl.dragging) return; tl.dragging = false; settle(); };
 scrub.addEventListener('change', release);
 scrub.addEventListener('pointerup', release);
 scrub.addEventListener('keydown', e => { if (e.key.startsWith('Arrow')) e.preventDefault(); });
@@ -2509,7 +2638,8 @@ function updateCars(t, dt) {
   const i = clamp(Math.floor(tl.idx), 0, LAST), f = tl.idx - i, hold = drive.holds[i];
   const launching = intro.p < 1 && !tl.idx;
   const st = launching ? stepPlan(-1) : f > 0 ? stepPlan(i) : null, F = launching ? intro.p : f;
-  const scale = st && !launching ? lerp(st.A.scale, st.B.scale, ease(f)) : hold.scale;
+  // px → seconds, for the gap numbers: the snapshot's own map at rest, the two blended on the way
+  const blend = ease(f), sec = st && !launching ? y => lerp(secAt(st.A.map, y - L.top), secAt(st.B.map, y - L.top), blend) : y => secAt(hold.map, y - L.top);
   const act = [];
   for (const c of cars) {
     const p = st ? st.car[c.id] : null, was = c.on;
@@ -2530,9 +2660,9 @@ function updateCars(t, dt) {
   act.sort((a, b) => a.by - b.by || a.rank - b.rank);
   let prev = null;
   act.forEach((c, r) => {
-    c.rank = r; c.gap = (c.by - act[0].by) / scale;
+    c.rank = r; c.sec = sec(c.by); c.gap = c.sec - act[0].sec;
     // intervals are between classified cars: one that is arriving or retiring isn't measured against
-    if (c.ghost) { c.ahead = null; c.int = 0; } else { c.ahead = prev; c.int = prev ? (c.by - prev.by) / scale : 0; prev = c; }
+    if (c.ghost) { c.ahead = null; c.int = 0; } else { c.ahead = prev; c.int = prev ? c.sec - prev.sec : 0; prev = c; }
   });
 
   // 3. Life on top: drift, surge, a look at the car ahead, a turn of the nose into every move.
@@ -2833,11 +2963,13 @@ requestAnimationFrame(frame);
 // fastestLab.idx = 1.5, fastestLab.world += 5000 (skip ahead along the lap, in car units)
 window.fastestLab = {
   goTo, play, cars, snaps, labs, PLAYBACK, TUNING, problems,
-  plan() { const p = buildPlan(); console.table(p.steps.map((s, i) => ({ to: snaps[i + 1].date, move: +s.move.toFixed(2), hold: +s.hold.toFixed(2) }))); return p; },
+  plan() { snaps.forEach((_, k) => stepPlan(k - 1)); const p = buildPlan(); console.table(p.steps.map((s, i) => ({ to: snaps[i + 1].date, move: +s.move.toFixed(2), hold: +s.hold.toFixed(2) }))); return p; },
   // The drive plan, measured. Per step: the least room between two cars side by side and nose to tail as
   // planned (px, before wobble), how many samples broke the gaps (should be 0), which cars had to be
   // retimed, and `worst`: the least room left between two cars at any sample once every car leans as far
   // towards its neighbours as elbowRoom() lets it, noses turned. That should never be under `clearance`.
+  // Also per step: the seconds its move takes and the fastest any car goes in it, along the road and
+  // across it (px per second, as planned, without the wobble). `opened`: see TUNING.zoom.
   check() {
     const u = L.carLen / 100, w = Math.max(0, +TUNING.wobble || 0), clearance = Math.max(0, +TUNING.clearance || 0) * L.carLen;
     const rows = snaps.map((_, k) => stepPlan(k - 1)).map((st, k) => {
@@ -2852,11 +2984,15 @@ window.fastestLab = {
             Math.abs(a.by - b.by) - L.carLen - (a.sy + b.sy) * SURGE * u * w - L.carW / 2 * turn));
         }
       }
-      return { step: k ? `${snaps[k - 1].date} → ${snaps[k].date}` : 'grid → ' + snaps[0].date, tight: st.tight, sideRoom: +st.sideRoom.toFixed(1), noseRoom: +st.noseRoom.toFixed(1), worst: +worst.toFixed(1), retimed: st.retimed.join(', ') };
+      return { step: k ? `${snaps[k - 1].date} → ${snaps[k].date}` : 'grid → ' + snaps[0].date, tight: st.tight, sideRoom: +st.sideRoom.toFixed(1), noseRoom: +st.noseRoom.toFixed(1), worst: +worst.toFixed(1),
+        secs: +st.secs.toFixed(2), along: Math.round(st.along), across: Math.round(st.across), retimed: st.retimed.join(', ') };
     });
     console.table(rows);
-    const worst = Math.min(...rows.map(r => r.worst));
-    return { ok: rows.every(r => !r.tight) && worst >= clearance - .6, carLen: L.carLen, carW: L.carW, sideGap: L.dx - L.carW, noseGap: L.dy - L.carLen, clearance, worst, steps: rows };
+    const worst = Math.min(...rows.map(r => r.worst)), moves = rows.slice(1);
+    // snapshots whose tightest pack of four had to be opened up to seat it: by how much, and how far the rest closed up
+    const opened = snaps.map((s, i) => ({ snapshot: s.date, pack: +L.maps[i].open.toFixed(2), rest: +L.maps[i].shrink.toFixed(2) })).filter(o => o.pack > 1.005);
+    return { ok: rows.every(r => !r.tight) && worst >= clearance - .6, carLen: L.carLen, carW: L.carW, sideGap: L.dx - L.carW, noseGap: L.dy - L.carLen, clearance, worst,
+      topSpeed: Math.max(...moves.map(r => r.along)), sideSpeed: Math.max(...moves.map(r => r.across)), limits: drive.calm, opened, steps: rows };
   },
   get idx() { return tl.idx; }, set idx(v) { cancelReplay(); tl.anim = null; tl.idx = clamp(+v || 0, 0, LAST); },
   get replaying() { return replay.on; }, get layout() { return L; }, get intro() { return intro; }, get drive() { return drive; },
