@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fastest Lab · the AI model grand prix</title>
+<title>Frontier Lap · the AI model grand prix</title>
 <meta name="description" content="Who has the best AI model lineup right now? The labs as race cars, the gaps as the message. One opinion, zero benchmarks.">
 <meta name="theme-color" content="#0b0d10">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Cpath d='M11 24 14 8h10M12.5 16h8' stroke='%23b65cff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -163,7 +163,7 @@
 <div id="curtain" aria-hidden="true"></div>
 
 <header id="brand">
-  <h1>Fastest <em>Lab</em></h1>
+  <h1>Frontier <em>Lap</em></h1>
   <div class="sectors"><i></i><i></i><i></i></div>
   <p>The AI model grand prix<span> · gaps by vibes</span></p>
 </header>
@@ -194,7 +194,7 @@
 <!-- ═══ DATA · the standings, the labs and their logos. This is the block to edit. ═══ -->
 <script id="race-data">
 /* ════════════════════════════════════════════════════════════════════════
-   FASTEST LAB · the data. Everything the page shows comes from this block.
+   FRONTIER LAP · the data. Everything the page shows comes from this block.
    ════════════════════════════════════════════════════════════════════════
 
    Three blocks, most-edited first:
@@ -273,7 +273,7 @@
 
 var SNAPSHOTS = `
 
-# FASTEST LAB · the replay as events, November 2024 to November 2026.
+# FRONTIER LAP · the replay as events, November 2024 to November 2026.
 # Drop-in replacement for the SNAPSHOTS text table (paste between the backticks).
 # The reasoning and sources for every event are in research/events.md.
 #
@@ -709,7 +709,7 @@ const TUNING = {
   // One exception: four cars can't sit closer together than a car length (the road seats three
   // abreast, see below). Where a snapshot packs four cars tighter than that, that pack alone is
   // opened up just enough, and the rest of that picture closes up a little to make the room. The
-  // numbers on the road still show the real gaps. fastestLab.check() lists those snapshots.
+  // numbers on the road still show the real gaps. frontierLap.check() lists those snapshots.
   zoom: 1.75,        // a tight field is stretched up to this many times to fill the screen.
                      // 1 = one fixed scale for the whole timeline (a tight field then sits in the
                      // top half), 3 = every snapshot runs from the top to the bottom.
@@ -765,7 +765,7 @@ const TUNING = {
                Every move eases in and out, so those peaks are only reached
                in the middle of it. If the longest `move` is too short for
                a step, the longest `move` wins and that step runs a little
-               faster than the two limits. `fastestLab.check()` lists every
+               faster than the two limits. `frontierLap.check()` lists every
                step's seconds and peak speeds.
    length      'calendar' and 'uniform'. Seconds the whole drive from first
                to latest snapshot should take (lights and launch come on
@@ -785,7 +785,7 @@ const TUNING = {
    hold gets the rest. So `length` is hit exactly whenever those limits
    allow it. With many snapshots the replay runs longer rather than
    rushing; with very few it ends early rather than idling.
-   `fastestLab.plan()` in the browser console prints the resulting timing.
+   `frontierLap.plan()` in the browser console prints the resulting timing.
 
    speed       Multiplier on the whole replay. 2 = twice as fast. Add
                ?speed=2 to the page address to try a value without editing.
@@ -953,7 +953,7 @@ snaps.forEach((s, i) => {
 const HAS_CAPTIONS = snaps.some(s => s.caption);
 
 if (problems.length) {
-  console.error(`[Fastest Lab] ${problems.length} problem${problems.length > 1 ? 's' : ''} in ${DATA_FILE}:\n` + problems.map(p => '  • ' + p).join('\n'));
+  console.error(`[Frontier Lap] ${problems.length} problem${problems.length > 1 ? 's' : ''} in ${DATA_FILE}:\n` + problems.map(p => '  • ' + p).join('\n'));
   const el = document.createElement('p');
   el.id = 'dataWarning';
   el.textContent = snaps.length ? `${problems.length} data problem${problems.length > 1 ? 's' : ''} · see the console` : `Nothing to show: ${DATA_FILE} has no usable snapshots · see the console`;
@@ -1223,7 +1223,7 @@ function layout() {
 
    A step that can't be driven like that with everybody moving at once (say, two cars both have
    to get past a pair that stays side by side) is retimed: some cars set off a little later or
-   arrive a little earlier. If even that fails the console names the step. fastestLab.check()
+   arrive a little earlier. If even that fails the console names the step. frontierLap.check()
    measures the whole timeline.
 
    How long a step takes ('events' replay): as long as it needs for nobody to go faster than
@@ -1645,7 +1645,7 @@ function buildDrive() {
       const k = [...holds.keys()].find(k => !drive.plans[k]);
       if (k != null) { stepPlan(k - 1, true); continue; }
       const issues = drive.plans.slice(1).map((st, k) => st.tight ? `  • ${snaps[k].date} → ${snaps[k + 1].date}: cars come closer than the set gaps (${st.tight} samples).` : '').filter(Boolean).join('\n');
-      if (issues && issues !== drive.issues) console.warn(`[Fastest Lab] At ${W} × ${H} some steps can't keep every car clear. Try smaller TUNING gaps, or snapshots that are less alike.\n` + issues);
+      if (issues && issues !== drive.issues) console.warn(`[Frontier Lap] At ${W} × ${H} some steps can't keep every car clear. Try smaller TUNING gaps, or snapshots that are less alike.\n` + issues);
       drive.issues = issues;
       return;
     }
@@ -2596,7 +2596,7 @@ function syncTimelineUI() {
    towards each other at the same moment, with their noses turned, `clearance` is still there.
    The other direction stays free: two cars side by side still surge past each other's doors.
    Everything here follows from where the plan puts the cars, so it is as repeatable as the plan,
-   and fastestLab.check() measures the worst case over the whole timeline.
+   and frontierLap.check() measures the worst case over the whole timeline.
    ---------------------------------------------------------------------- */
 const DRIFT = 7, SURGE = 9, KERB_PLAY = 3;
 const TURN_TIGHT = .03, TURN_FREE = .12;                // radians
@@ -2934,9 +2934,9 @@ document.body.classList.add('live');
 last = performance.now() / 1000;
 requestAnimationFrame(frame);
 
-// A handle for the console: fastestLab.goTo(0), fastestLab.play(), fastestLab.plan(), fastestLab.check(),
-// fastestLab.idx = 1.5, fastestLab.world += 5000 (skip ahead along the lap, in car units)
-window.fastestLab = {
+// A handle for the console: frontierLap.goTo(0), frontierLap.play(), frontierLap.plan(), frontierLap.check(),
+// frontierLap.idx = 1.5, frontierLap.world += 5000 (skip ahead along the lap, in car units)
+window.frontierLap = {
   goTo, play, cars, snaps, labs, PLAYBACK, TUNING, problems,
   plan() { snaps.forEach((_, k) => stepPlan(k - 1)); const p = buildPlan(); console.table(p.steps.map((s, i) => ({ to: snaps[i + 1].date, move: +s.move.toFixed(2), hold: +s.hold.toFixed(2) }))); return p; },
   // The drive plan, measured. Per step: the least room between two cars side by side and nose to tail as
