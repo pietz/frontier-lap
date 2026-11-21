@@ -2838,33 +2838,8 @@ function draw(t) {
     ctx.restore();
   }
 
-  // gantries and bridges pass over the cars, but never over the gap numbers
+  // gantries and bridges pass over the cars
   drawOverhead();
-
-  if (hud > .01) {
-    // interval callouts in the empty road
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineCap = 'butt';
-    for (const c of cars) {
-      const a = c.ahead; if (!a || c.by > H + carLen) continue;
-      const y0 = a.by + carLen + 10, y1 = c.by - 9, free = y1 - y0;
-      const al = smooth(18, 36, free) * hud; if (al < .01) continue;
-      const mid = (y0 + y1) / 2, fs = clamp(free * .36, 14, L.mobile ? 24 : 32), half = fs * .68;
-      const cap = free > fs + 74;
-      ctx.strokeStyle = `rgba(255,255,255,${.6 * al})`; ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      ctx.moveTo(cx - 9, y0); ctx.lineTo(cx + 9, y0); ctx.moveTo(cx - 9, y1); ctx.lineTo(cx + 9, y1);
-      const up = mid - half - (cap ? 15 : 0);
-      if (up - y0 > 3) { ctx.moveTo(cx, y0); ctx.lineTo(cx, up); }
-      if (y1 - (mid + half) > 3) { ctx.moveTo(cx, mid + half); ctx.lineTo(cx, y1); }
-      ctx.stroke();
-      ctx.font = `italic 700 ${fs}px ${FONT}`;
-      ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 8 * DPR;
-      ctx.fillStyle = `rgba(255,255,255,${.96 * al})`;
-      ctx.fillText('+' + c.int.toFixed(3), cx, mid + 1);
-      if (cap) { ctx.font = `600 10px ${FONT}`; ctx.fillStyle = `rgba(255,255,255,${.6 * al})`; ctx.fillText('I N T E R V A L', cx, mid - half - 5); }
-      ctx.shadowBlur = 0;
-    }
-  }
 
   // header / footer shade + vignette
   let sh = ctx.createLinearGradient(0, 0, 0, 150);
