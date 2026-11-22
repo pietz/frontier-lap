@@ -56,3 +56,6 @@ These are in only one ranking:
 ## Owner decisions
 
 - **2026-11-21: today's fifth place is Moonshot.** SpaceX AI drops out after the index v5 re-rating, which all three rankings support.
+- **2026-11-22: December 2025 is led by Anthropic.** The index called it a three-way tie, and Claude Code's breakout breaks it, so Anthropic's first lead starts with GPT-5.2's week (11 Dec), not on 5 Feb.
+- **2026-11-22: DeepSeek R1 enters second (20 Jan 2025).** At that moment only OpenAI had a strong reasoning model. Anthropic and xAI followed in February, and Google only had an experimental Flash model.
+- **The aggregation method above is accepted.** Wherever two of three rankings agree, their call stands.
