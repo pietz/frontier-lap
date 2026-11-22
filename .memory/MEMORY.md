@@ -19,7 +19,7 @@
 - **Logo boxes:** a LOGOS `box` is what gets centred and scaled into the roundel, and the roundel clips. The SpaceX AI box covers only the "XA", so its swoosh tail runs off the disc on purpose.
 - **Background material** is in the parent folder ../:
   - BRIEF.md: the concept
-  - research/events.txt: the SNAPSHOTS table as it is in index.html since v2, 29 entries (an opening state, 27 model-release events, the owner's closing standings). Pasted in verbatim; to update, paste it between the backticks again.
+  - research/events.txt: the first-pass SNAPSHOTS table (29 entries) that index.html played until the merged ranking replaced it. On branch `merged-ranking` (Nov 2026) the table in index.html is the merge of three researched rankings: 31 entries, a copy in research/ranking-review/merged.txt, the method and every judgement call in research/ranking-review/MERGED.md. Notes there mark a first-time lab with "NEW:" and a returning one with "BACK:". A step where one car passes three can fail check() on desktop; moving one gap by 0.10 fixed the only such case (24 Feb 2025, Google +0.45).
   - research/events.md: sources and reasoning behind each event
   - research/standings-history.md: the same for the 14 quarterly snapshots v1 uses
   - NAMES.md: parked name research

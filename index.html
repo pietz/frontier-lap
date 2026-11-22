@@ -275,291 +275,310 @@ var SNAPSHOTS = `
 
 # FRONTIER LAP · the replay as events, November 2024 to November 2026.
 # Drop-in replacement for the SNAPSHOTS text table (paste between the backticks).
-# The reasoning and sources for every event are in research/events.md.
+# Merged from three researched rankings (Sonnet, Sol, Neon): an event is kept when
+# two of the three have it, the order is the one two of them give, each gap is the
+# middle value of the three, and the owner's decisions override. The method and every
+# judgement call are in research/ranking-review/MERGED.md (a copy of this table: merged.txt).
 #
 # Same format as the snapshot table, plus two additions for the v2 page:
 #   @lab at the end of a date line   the lab whose event this is (car to highlight)
 #   > caption                        one line: what happened and why it moved the field
 #
-# 29 entries: an opening state, 27 events, and the owner's closing standings.
+# 31 entries: an opening state, 29 events, and the closing standings. Five cars each.
 # Scale: +0.25 is wheel to wheel, +1.00 a clear lead, +1.70 a big break.
 # Every date is unique on purpose: the page skips a second entry on the same date.
 #
-# Guest cars: DeepSeek drives from R1 (Jan 2025) until GPT-5 (Aug 2025);
-# Moonshot from Kimi K3 (Jul 2026) until Gemini 4 Argon (Sep 2026).
+# Guest cars: DeepSeek drives from R1 (Jan 2025) until Kimi K2 Thinking (Nov 2025).
+# Moonshot drives from Kimi K2 Thinking (Nov 2025) until Muse Spark (Apr 2026), for five
+# weeks with Kimi K2.6 (Apr to May 2026), from Kimi K3 (Jul 2026) until Gemini 4 Argon
+# (Oct 2026), and from the index v5 re-rating (27 Oct 2026) to the end.
+# The regulars step out too: Meta from Grok 3 (Feb 2025) until Muse Spark (Apr 2026) and
+# again from Kimi K3 until Muse Spark 1.3 (Jul to Sep 2026); Google from Muse Spark 1.3
+# until Gemini 4 Argon (Sep to Oct 2026); xAI for four weeks after R1 (Jan 2025), for
+# five weeks after GPT-5.5 (Apr 2026), and as SpaceX AI for good after index v5 (Oct 2026).
 
 # Opening state. o1-preview, Claude 3.5 Sonnet (new), experimental Geminis, Llama 3.2, Grok 2
 2024-11-20  OpenAI's race to lose
-  > Where it stood: o1 on pole, Claude 3.5 Sonnet the coders' pick.
+  > Where it stood: o1-preview on pole, Claude the coders' pick.
   openai                o1-preview on pole, the field regrouping.
   anthropic   +0.40     The coders' car of choice.
-  google      +0.45     Experimental Geminis trading fastest laps.
-  meta        +1.30     Best of the open-weights class.
-  spacexai    +0.35     Grok 2: still learning the circuit.
+  google      +0.30     Experimental Geminis trading fastest laps.
+  meta        +1.10     Best of the open-weights class.
+  spacexai    +0.40     Grok 2: still learning the circuit.
 
-# DeepSeek R1 (Jan 20). Since the opening: o1 and o1 pro (Dec 5), o3 preview (Dec 20), Gemini 2.0 Flash (Dec 11)
+# DeepSeek R1 (Jan 20). Since the opening: o1 and o1 pro (Dec 5), o3 preview (Dec 20), Gemini 2.0 Flash (Dec 11).
+# Owner decision: R1 enters second, the only strong reasoning model besides OpenAI's
 2025-01-20  DeepSeek shocks the paddock  @deepseek
-  > R1 matches o1 for pennies. Nvidia drops 17% in a day.
-  openai                o1 pro out, o3 previewed. Lead grows.
-  anthropic   +0.50     Still on 3.5 Sonnet. No reasoning model.
+  > DeepSeek R1 matches o1 for pennies and goes straight to second.
+  openai                o1 and o1 pro lead. o3 previewed.
+  deepseek    +0.20     NEW: R1, o1-level, open weights.
+  anthropic   +0.55     Still on 3.5 Sonnet. No reasoning model.
   google      +0.30     Gemini 2.0 Flash: quick and cheap.
-  deepseek    +0.25     NEW: R1, o1-level, open weights.
-  meta        +1.15     Llama 3.3. No longer the open-weights king.
-  spacexai    +0.35     Grok 2, waiting on Grok 3.
+  meta        +0.90     Llama 3.3. No longer the open-weights king.
 
-# Grok 3 (Feb 17). Also since R1: o3-mini (Jan 31), Deep Research (Feb 2), Gemini 2.0 Pro (Feb 5)
-2025-02-17  Grok 3 gatecrashes the front  @spacexai
-  > Grok 3 is first past 1400 on LMArena. xAI jumps the queue.
-  openai                o3-mini and Deep Research. Still ahead.
-  anthropic   +0.55     Sonnet 3.5 showing its age.
-  google      +0.15     Gemini 2.0 Pro: quick, not quickest.
-  spacexai    +0.15     Grok 3 comes from nowhere.
-  deepseek    +0.35     R1: still the paddock's talking point.
-  meta        +1.30     Passed by two cars in a month.
+# Grok 3 (Feb 17, paid beta). o3-mini was Jan 31, Gemini 2.0 Pro Experimental Feb 5
+2025-02-17  Grok 3 joins the front pack  @spacexai
+  > Grok 3 gives xAI a contender and pushes Meta out of the five.
+  openai                o3-mini strengthens the reasoning lineup.
+  deepseek    +0.15     R1 holds second.
+  anthropic   +0.45     Hybrid reasoning is a week away.
+  google      +0.25     Gemini 2.0 Pro: quick, not quickest.
+  spacexai    +0.20     BACK: Grok 3, first past 1400 on LMArena.
 
-# Claude 3.7 Sonnet + Claude Code research preview (Feb 24). GPT-4.5 follows on Feb 27
+# Claude 3.7 Sonnet and the Claude Code preview (Feb 24). GPT-4.5 follows on Feb 27
 2025-02-24  Claude 3.7 brings Claude Code  @anthropic
   > Claude 3.7 thinks on demand, and Claude Code quietly arrives.
-  openai                Lead intact. GPT-4.5 lands in three days.
-  anthropic   +0.35     Sonnet 3.7 arrives with Claude Code.
-  google      +0.30     Gemini 2.0: quick, not quickest.
-  spacexai    +0.15     Grok 3, one week old and holding.
-  deepseek    +0.40     R1 still ahead of every Llama.
-  meta        +1.30     Llama 3.3. Llama 4 promised.
+  openai                o3-mini holds pole. GPT-4.5 in three days.
+  anthropic   +0.30     Sonnet 3.7 arrives with Claude Code.
+  deepseek    +0.25     R1 still level with o1 on the index.
+  google      +0.45     Gemini 2.0 Pro trails on reasoning.
+  spacexai    +0.20     Grok 3 holds fifth, no API yet.
 
-# Gemini 2.5 Pro Experimental (Mar 25); GPT-4o image generation ships the same day
+# Gemini 2.5 Pro Experimental (Mar 25): 68 on the index two weeks later, o3-mini high 66. Llama 4 (Apr 5) flops
 2025-03-25  Gemini 2.5 takes pole  @google
-  > Gemini 2.5 Pro: Google's first undisputed best model.
-  google                Gemini 2.5 Pro. Forty Elo clear.
+  > Gemini 2.5 Pro is Google's first undisputed best model.
+  google                Gemini 2.5 Pro: Google's first clear lead.
   openai      +0.20     Ghibli images go viral. o3 still garaged.
-  anthropic   +0.30     Sonnet 3.7 keeps the coders loyal.
-  spacexai    +0.45     Grok 3 hangs on to the pack.
-  deepseek    +0.65     No upgrades since January.
-  meta        +1.00     Llama 4 is days away.
-
-# Llama 4 Scout and Maverick (Apr 5) and the LMArena "experimental version" row
-2025-04-05  Llama 4 stumbles  @meta
-  > Llama 4's Arena score came from a variant nobody can use.
-  google                Gemini 2.5 Pro still on pole.
-  openai      +0.20     o3 eleven days out.
-  anthropic   +0.30     Sonnet 3.7 and Claude Code.
-  spacexai    +0.45     Grok 3 holding fourth.
-  deepseek    +0.70     Still quicker than Llama 4.
-  meta        +1.20     Llama 4: stewards reviewing those benchmarks.
+  anthropic   +0.25     Sonnet 3.7 keeps the coders loyal.
+  deepseek    +0.45     R1 and a V3 refresh, nothing newer.
+  spacexai    +0.25     Grok 3 hangs on to the pack.
 
 # o3 and o4-mini (Apr 16)
 2025-04-16  o3 puts OpenAI back in front  @openai
-  > o3 ships with tools. OpenAI retakes the lead.
+  > o3 ships with tools and OpenAI retakes the lead.
   openai                o3 and o4-mini: back in front.
   google      +0.15     2.5 Pro loses pole, not pace.
   anthropic   +0.35     Waiting on Claude 4.
-  spacexai    +0.50     Grok 3 starts to fade.
-  deepseek    +0.60     R1 at three months old.
-  meta        +1.30     Behemoth nowhere to be seen.
+  deepseek    +0.45     R1 at three months, still fourth.
+  spacexai    +0.25     Grok 3 starts to fade.
 
-# Claude Opus 4 and Sonnet 4, Claude Code GA (May 22). Google I/O two days earlier: 2.5 Pro, Veo 3
+# Claude Opus 4 and Sonnet 4, Claude Code generally available (May 22). DeepSeek R1-0528 follows on May 28
 2025-05-22  Claude 4: three abreast  @anthropic
-  > Claude 4 leads SWE-bench. Three abreast at the front.
+  > Claude 4 tops SWE-bench and Claude Code opens to everyone.
   openai                o3 ahead by a front wing.
   google      +0.15     I/O upgrades: 2.5 Pro and Veo 3.
   anthropic   +0.15     Claude 4 tops the coding sector.
-  spacexai    +0.90     Waiting on the Grok 4 upgrade.
-  deepseek    +0.55     A one-car team, still in the points.
-  meta        +1.35     Behemoth delayed. Chequebook out.
+  deepseek    +0.25     An R1 refresh is a week away.
+  spacexai    +0.30     Waiting on Grok 4.
 
-# Grok 4 and Grok 4 Heavy (Jul 9): 73 on Artificial Analysis, ahead of o3-pro (71) and Gemini 2.5 Pro (70)
+# Grok 4 (Jul 9): 73 on the index, o3-pro 71, Gemini 2.5 Pro 70, R1-0528 68, Claude 4 Opus 64
 2025-07-09  Grok 4 tops the index  @spacexai
-  > Grok 4 tops the index for the first time. xAI closes in.
+  > Grok 4 tops the index, but in daily use it stays fourth.
   openai                o3-pro leads on breadth, not benchmarks.
   google      +0.15     2.5 Pro: level with o3.
-  anthropic   +0.15     Opus 4: behind on index, ahead on code.
-  spacexai    +0.20     Grok 4: fastest single lap in the field.
-  deepseek    +1.20     R1 refresh can't hold this pace.
-  meta        +1.50     Signing drivers, not setting laps.
+  anthropic   +0.15     Behind on the index, ahead on code.
+  spacexai    +0.25     Grok 4: fastest single lap, no coding agent.
+  deepseek    +0.35     R1-0528 holds fifth.
 
-# GPT-5 (Aug 7). Two days earlier: Claude Opus 4.1 and Genie 3. DeepSeek leaves the track here
+# GPT-5 (Aug 7). Claude Opus 4.1 was Aug 5
 2025-08-07  GPT-5: bumpy but ahead  @openai
-  > GPT-5 retakes the top, then a user revolt forces a retreat.
+  > GPT-5 takes the top score, then a user revolt forces a retreat.
   openai                Rough launch, still fastest.
-  anthropic   +0.30     Opus 4.1 and a Claude Code boom.
-  google      +0.10     Genie 3 dazzles; 2.5 Pro ages.
-  spacexai    +0.25     Grok 4 led the index for a month.
-  meta        +2.60     Superintelligence lab founded, nothing shipped.
+  anthropic   +0.25     Opus 4.1 and a Claude Code boom.
+  google      +0.15     2.5 Pro ages. Genie 3 dazzles.
+  spacexai    +0.30     Grok 4 led the index for a month.
+  deepseek    +0.40     R1-0528 and V3.1 hold fifth.
 
-# Gemini 3 Pro (Nov 18). Since GPT-5: Sonnet 4.5 (Sep 29), Sora 2 (Sep 30), GPT-5.1 (Nov 12), Grok 4.1 (Nov 17)
+# Kimi K2 Thinking (Nov 6): 67 on the index. Since August: Claude Sonnet 4.5 (Sep 29)
+2025-11-06  Kimi K2 Thinking puts Moonshot on track  @moonshot
+  > Kimi K2 Thinking scores 67 and takes DeepSeek's place.
+  openai                GPT-5 is still the one to beat.
+  anthropic   +0.25     Sonnet 4.5 keeps Claude Code sharp.
+  google      +0.25     Gemini 3 is twelve days away.
+  spacexai    +0.30     Grok 4: strong on raw reasoning.
+  moonshot    +0.30     NEW: Kimi K2 Thinking, best open model.
+
+# Gemini 3 Pro (Nov 18): 73 on the index, GPT-5.1 (Nov 12) 70
 2025-11-18  Gemini 3 takes pole  @google
-  > Gemini 3 Pro sweeps the boards. Google leads again.
+  > Gemini 3 Pro sweeps the boards and Google leads again.
   google                Gemini 3 Pro tops the timing screens.
   openai      +0.30     GPT-5.1, a week old, already passed.
   anthropic   +0.15     Sonnet 4.5 strong on code. Opus due.
-  spacexai    +0.75     Grok 4.1 can't follow the leaders.
-  meta        +2.40     Seven months since Llama 4.
+  spacexai    +0.45     Grok 4.1 can't follow the leaders.
+  moonshot    +0.25     K2 Thinking keeps the open-weights crown.
 
-# Claude Opus 4.5 (Nov 24). OpenAI's "code red" memo follows on Dec 2
+# Claude Opus 4.5 (Nov 24): 70 on the index, level with GPT-5.1
 2025-11-24  Opus 4.5 answers in six days  @anthropic
-  > Opus 4.5 passes 80% on SWE-bench. OpenAI declares code red.
+  > Opus 4.5 passes 80% on SWE-bench and takes second.
   google                Gemini 3 Pro and Nano Banana Pro.
-  anthropic   +0.20     Opus 4.5 breaks 80% on SWE-bench.
-  openai      +0.20     Third for the first time. Code red follows.
-  spacexai    +0.90     Grok 4.1 losing touch.
-  meta        +2.40     LeCun leaves the team.
+  anthropic   +0.15     Opus 4.5 breaks 80% on SWE-bench.
+  openai      +0.15     Level on the index. Code red follows.
+  spacexai    +0.60     Grok 4.1 losing touch.
+  moonshot    +0.25     K2 Thinking holds fifth.
 
-# Claude Opus 4.6 and GPT-5.3-Codex (both Feb 5), after Claude Code's holiday breakout. GPT-5.2 was Dec 11
+# GPT-5.2 (Dec 11). Index v4.0 (Jan 7): GPT-5.2 51, Opus 4.5 49, Gemini 3 Pro 48.
+# Owner decision: the index calls it a three-way tie and Claude Code breaks it, so Anthropic leads from here
+2025-12-11  Three-way tie, Claude Code in front  @openai
+  > GPT-5.2 makes it a dead heat, and Claude Code tips it.
+  anthropic             Claude Code over the holidays tips the tie.
+  openai      +0.10     GPT-5.2 answers the code red.
+  google      +0.15     Gemini 3 Pro, a month old.
+  spacexai    +0.70     Grok 4.1 Fast. No new pace.
+  moonshot    +0.25     Kimi K2.5 follows in January.
+
+# Claude Opus 4.6 and GPT-5.3-Codex (both Feb 5): Opus 4.6 53, GPT-5.2 51, Gemini 3 Pro 48, Kimi K2.5 about 47
 2026-02-05  Claude Code fever  @anthropic
-  > Opus 4.6 rides a winter of Claude Code mania to the top.
-  anthropic             First lead ever: Opus 4.6, Claude Code.
-  openai      +0.20     GPT-5.3-Codex, launched minutes after Opus.
-  google      +0.15     Gemini 3 Pro, now three months old.
-  spacexai    +1.35     New owner SpaceX, same pace.
-  meta        +2.10     Ten months since Llama 4.
+  > Opus 4.6 tops the index after a winter of Claude Code mania.
+  anthropic             Opus 4.6: now ahead on the index too.
+  openai      +0.25     GPT-5.3-Codex, launched minutes after Opus.
+  google      +0.20     Gemini 3 Pro, now three months old.
+  moonshot    +0.55     K2.5: only the big three score higher.
+  spacexai    +0.20     New owner SpaceX. Grok slips to fifth.
 
-# Gemini 3.1 Pro (Feb 19): 57 on Artificial Analysis, four clear of Opus 4.6
+# Gemini 3.1 Pro (Feb 19): 57 on the index, four clear of Opus 4.6 at under half the cost
 2026-02-19  Gemini 3.1 Pro tops the index  @google
-  > Gemini 3.1 Pro tops the index. Claude Code keeps Anthropic ahead.
-  anthropic             Outscored, still the one developers pick.
-  google      +0.15     Gemini 3.1 Pro tops the index.
-  openai      +0.15     GPT-5.2 and Codex, shuffled to third.
-  spacexai    +1.40     Grok 4.20 scores 48.
-  meta        +2.10     Still silent.
+  > Gemini 3.1 Pro tops the index, but Anthropic stays ahead.
+  anthropic             Outscored by four, still the developers' pick.
+  google      +0.10     Gemini 3.1 Pro: the index leader.
+  openai      +0.20     GPT-5.2 and Codex, shuffled to third.
+  moonshot    +0.40     K2.5, still best of the rest.
+  spacexai    +0.35     Grok 4.20 scores 48.
 
-# Muse Spark (Apr 8). Also since February: GPT-5.4 (Mar 5), Claude Mythos Preview, partners only (Apr 7)
+# GPT-5.4 (Mar 5): 57 on the index, level with Gemini 3.1 Pro
+2026-03-05  GPT-5.4 puts Codex back in the hunt  @openai
+  > GPT-5.4 ties Gemini on the index and takes second.
+  anthropic             Opus 4.6 and Claude Code hold a narrow lead.
+  openai      +0.15     GPT-5.4: Codex wins developers back.
+  google      +0.10     Gemini 3.1 Pro, level on the index.
+  moonshot    +0.40     K2.5 holds fourth.
+  spacexai    +0.35     Grok 4.20 holds the last slot.
+
+# Muse Spark (Apr 8): 52 on the index, app only. Claude Mythos Preview (Apr 7) is partners-only
 2026-04-08  Meta is back  @meta
-  > Muse Spark lands in the top five. Goodbye, Llama.
-  anthropic             Mythos Preview is partners-only. Opus 4.6 leads.
+  > Muse Spark puts Meta back in the top five after 14 months.
+  anthropic             Mythos is partners-only. Opus 4.6 leads.
+  openai      +0.10     GPT-5.4 keeps Codex wheel to wheel.
   google      +0.15     Gemini 3.1 Pro, co-fastest on the index.
-  openai      +0.10     GPT-5.4 drew level with Gemini.
-  meta        +1.35     Muse Spark: from nowhere to fourth.
-  spacexai    +0.20     Mugged by a Meta comeback.
+  meta        +1.05     BACK: Muse Spark, 52, app only for now.
+  spacexai    +0.30     Grok 4.20 just behind Meta.
 
-# GPT-5.5 and GPT-5.5 Pro (Apr 23). Claude Opus 4.7 was Apr 16
+# GPT-5.5 (Apr 23): 60 on the index. Opus 4.7 was Apr 16 (57), Kimi K2.6 Apr 20 (54), Grok 4.3 Apr 17 (53)
 2026-04-23  GPT-5.5 strikes back  @openai
-  > GPT-5.5 goes three points clear. OpenAI back on pole.
+  > GPT-5.5 goes three points clear and OpenAI is back on pole.
   openai                GPT-5.5 goes three points clear.
-  anthropic   +0.25     Mythos locked away; Opus 4.7 grumbles.
-  google      +0.30     Gemini 3.1 Pro still in touch.
-  meta        +1.20     Muse Spark holds fourth.
-  spacexai    +0.15     Grok 4.3 stays on Meta's bumper.
+  anthropic   +0.25     Opus 4.7 is hard to love. Mythos stays locked.
+  google      +0.25     Gemini 3.1 Pro still in touch.
+  moonshot    +0.65     BACK: Kimi K2.6, fourth on the index.
+  meta        +0.30     Muse Spark holds on, no API yet.
 
-# Claude Fable 5 (Jun 9). Opus 4.8 was May 28; Google I/O brought Gemini 3.5 Flash, no Pro
+# Claude Opus 4.8 (May 28): 61.4 on the index, GPT-5.5 60.2. Google I/O brought Gemini 3.5 Flash, no Pro
+2026-05-28  Opus 4.8 retakes the lead  @anthropic
+  > Opus 4.8 edges ahead on the index and wins Every's tests.
+  anthropic             Opus 4.8: back in front by a point.
+  openai      +0.20     GPT-5.5 a point and a bit back.
+  google      +0.40     Flash is quick. Where is Pro?
+  spacexai    +0.70     BACK: Grok 4.3 and Grok Build.
+  meta        +0.15     Muse Spark, no upgrade yet.
+
+# Claude Fable 5 (Jun 9): 64.9 on the index, nearly five clear
 2026-06-09  Fable 5 rewrites the board  @anthropic
-  > Fable 5 launches five points clear. The biggest swing yet.
+  > Fable 5 launches five points clear, the biggest swing yet.
   anthropic             Fable 5: five points clear at launch.
-  openai      +1.30     GPT-5.5 suddenly looks a generation old.
-  google      +0.45     Flash is quick. Where is Pro?
-  meta        +0.60     Muse Spark holding station.
-  spacexai    +0.15     Grok Build joins the coding race.
+  openai      +1.20     GPT-5.5 suddenly looks a generation old.
+  google      +0.45     Flash is fast, Pro is missing.
+  spacexai    +0.35     Grok Build joins the coding race.
+  meta        +0.15     Muse Spark holding station.
 
 # Fable 5 and Mythos 5 disabled for all customers after a Commerce Department directive (Jun 12)
 2026-06-12  Red flag for Fable 5  @anthropic
-  > Fable 5 pulled offline by government order. Opus holds the lead.
+  > Fable 5 is pulled offline by government order.
   anthropic             Fable garaged by order. Opus 4.8 leads.
-  openai      +0.30     GPT-5.5 back within striking distance.
-  google      +0.45     Gap halves without a new part.
-  meta        +0.60     Closer by default.
-  spacexai    +0.15     Grok 4.3, same story.
+  openai      +0.25     GPT-5.5 back within striking distance.
+  google      +0.45     Closer without a new part.
+  spacexai    +0.35     Grok 4.3, same story.
+  meta        +0.15     Closer by default.
 
-# Grok 4.5 (Jul 8), two days after the xAI to SpaceX AI rebrand. Fable 5 access came back on Jul 1
-2026-07-08  SpaceX AI finds pace  @spacexai
-  > xAI becomes SpaceX AI, and Grok 4.5 passes every Gemini.
-  anthropic             Fable 5 back on track since July.
-  openai      +1.30     GPT-5.6 Sol held back for review.
-  spacexai    +0.20     New name, new pace: Grok 4.5.
-  google      +0.20     Passed by a Grok. Still no Pro.
-  meta        +0.60     Muse Spark, three months without an upgrade.
-
-# GPT-5.6 Sol, Terra and Luna (Jul 9). Muse Spark 1.1 the same week
+# GPT-5.6 Sol, Terra, Luna (Jul 9). Fable back Jul 1; Grok 4.5 Jul 8 (54). Index v4.1: Fable 60, Sol 59
 2026-07-09  GPT-5.6 Sol closes the gap  @openai
-  > GPT-5.6 Sol lands one point behind Fable 5.
-  anthropic             Lead cut to one index point.
-  openai      +0.40     GPT-5.6 Sol: fastest in the coding sector.
-  spacexai    +1.10     Grok 4.5 a day old, holding third.
-  google      +0.20     Best model is still a Flash.
-  meta        +0.30     Muse Spark 1.1 keeps the tow.
+  > GPT-5.6 Sol lands one point behind the restored Fable 5.
+  anthropic             Fable back since 1 July. Lead: one point.
+  openai      +0.40     GPT-5.6 Sol tops the Coding Agent Index.
+  spacexai    +0.90     Grok 4.5, a day old, passes Google.
+  google      +0.25     Best model is still a Flash.
+  meta        +0.20     Muse Spark 1.1 keeps the tow.
 
-# Kimi K3 (Jul 16): 57 on Artificial Analysis, third overall. Moonshot joins as a guest car
+# Kimi K3 (Jul 16): 57 on the index, third by score; slower and less useful in practice
 2026-07-16  Kimi K3 crashes the party  @moonshot
-  > Kimi K3 debuts third on the index. Six labs above 50.
-  anthropic             Fable 5 leads; Opus 5 is next.
+  > Kimi K3 scores third on the index but drives in fourth.
+  anthropic             Fable 5 leads. Opus 5 is next.
   openai      +0.40     GPT-5.6 Sol: one point off the lead.
-  moonshot    +0.50     NEW: Kimi K3, third fastest on debut.
-  spacexai    +0.60     Grok 4.5 loses third after a week.
-  google      +0.20     No model above 50. Still no Pro.
-  meta        +0.30     Muse Spark 1.1 brings up the rear.
+  spacexai    +0.90     Grok 4.5 and Grok Build hold third.
+  moonshot    +0.15     BACK: Kimi K3. Big, slow, benchmark-strong.
+  google      +0.30     No model above 50. Still no Pro.
 
-# Muse Spark 1.3 (Sep 2). Since July: Opus 5 (Jul 24), Muse Spark 1.2 + Muse Code (Aug 5), Grok 4.6 (Aug 12), Fable 5.1 (Sep 1)
+# Fable 5.1 (Sep 1, 66) and Muse Spark 1.3 (Sep 2, 61). Since July: Opus 5 (Jul 24), Grok 4.6 (Aug 12, 61)
 2026-09-02  Meta onto the podium  @meta
-  > Muse Spark 1.3 trails only two Claudes. Meta on the podium.
+  > Muse Spark 1.3 puts Meta third, and Google drops out.
   anthropic             Fable 5.1 tops the index at 66.
-  openai      +0.90     GPT-5.6 Sol, five points adrift.
-  meta        +0.50     Muse Spark 1.3: best of the rest.
-  spacexai    +0.20     Grok 4.6 matched Sol in August.
-  moonshot    +0.10     Kimi K3 still ahead of Google.
-  google      +0.15     Seven months without a Pro.
+  openai      +0.85     GPT-5.6 Sol, five points adrift.
+  meta        +0.20     BACK: Muse Spark 1.3, level with Sol.
+  spacexai    +0.15     Grok 4.6, level on 61.
+  moonshot    +0.20     Kimi K3 just ahead of Gemini 3.8 Flash.
 
-# GPT-6 Astra (Sep 3); Artificial Analysis overhauls its index (v4.2) within the week
+# GPT-6 Astra (Sep 3). Index v4.2 (Sep 4) and v4.3 (Sep 7) re-rate it to 53, level with Fable 5.1
 2026-09-03  GPT-6 arrives  @openai
-  > GPT-6 arrives. OpenAI declares the AGI era.
+  > GPT-6 Astra arrives, and the index rates it level with Fable.
   anthropic             Fable 5.1 keeps its nose ahead.
-  openai      +0.30     GPT-6 Astra: level on coding.
-  meta        +1.10     Muse Spark 1.3 holds third.
-  spacexai    +0.20     Grok 4.6. Grok 5 keeps slipping.
-  moonshot    +0.10     Kimi K3 keeps Google in its mirrors.
-  google      +0.15     Last, for the only time.
+  openai      +0.15     GPT-6 Astra: level once the index settles.
+  meta        +1.00     Muse Spark 1.3 holds third.
+  spacexai    +0.25     Grok 4.6. Grok 5 keeps slipping.
+  moonshot    +0.25     Kimi K3, still in the points.
 
-# Claude Opus 5.5 (Sep 22): 58, five clear of GPT-6 Astra and Fable 5.1. Grok 4.7 was Sep 21
+# Claude Opus 5.5 (Sep 22): 58 on index v4.3, Astra and Fable 5.1 at 53. Grok 4.7 was Sep 21 (46)
 2026-09-22  Opus 5.5 pulls away  @anthropic
-  > Opus 5.5 scores five clear of GPT-6. Anthropic pulls away.
+  > Opus 5.5 scores five points clear of GPT-6.
   anthropic             Opus 5.5: fastest by several points.
-  openai      +0.85     GPT-6 fast, but not Opus fast.
-  meta        +1.05     Muse Spark 1.3, still third.
-  spacexai    +0.30     Grok 4.7 finds two points.
-  moonshot    +0.10     Kimi K3 hanging on.
-  google      +0.15     Gemini 4 is eight days away.
+  openai      +0.90     GPT-6 fast and cheap, but not Opus fast.
+  meta        +0.95     Muse Spark 1.3, still third.
+  spacexai    +0.30     Grok 4.7 gains just two points.
+  moonshot    +0.25     Kimi K3 hanging on.
 
-# Gemini 4 Argon (announced Sep 30, GA Oct 13): 53, level with GPT-6 Astra. Moonshot leaves the track here
-2026-09-30  Gemini 4 rejoins the fight  @google
-  > Gemini 4 Argon ties GPT-6 for less. Kimi is squeezed out.
+# Gemini 4 Argon generally available (Oct 13): 53, level with Astra. Announced Sep 30 to selected users; Muse Wonder Oct 12
+2026-10-13  Gemini 4 Argon opens up  @google
+  > Gemini 4 Argon opens to everyone and Google returns in third.
   anthropic             Opus 5.5 and Sonnet 5.5 lead.
   openai      +0.85     Astra matched by a Gemini.
-  google      +0.45     Gemini 4 Argon: back on the podium.
-  meta        +0.65     Bumped to fourth. Muse Wonder next.
-  spacexai    +0.35     Grok 4.7 in. Grok 5 missing.
+  google      +0.20     BACK: Gemini 4 Argon, level with Astra.
+  meta        +0.30     Wonder Full scores 56, but not on the API.
+  spacexai    +0.55     Grok 4.7 fading.
 
-# Muse Wonder and Muse Wonder Full (Oct 12): Wonder Full 56, ahead of GPT-6 Astra; not on the API
-2026-10-12  Muse Wonder stuns the timing screens  @meta
-  > Muse Wonder ties for first on coding. But it's not on the API.
-  anthropic             Opus 5.5 still the benchmark.
-  openai      +0.85     Sol and Luna fill out the GPT-6 range.
-  google      +0.45     Argon goes GA tomorrow.
-  meta        +0.30     Muse Wonder: Meta's best lap ever.
-  spacexai    +0.80     Dropped by the pack.
+# Index v5 (Oct 27): Opus 5.5 58, Astra 57, Argon 50, Wonder Full 50, Kimi K3.1 Pro (Oct 23) 46, Grok 4.7 35.
+# Owner decision: SpaceX AI is out from here. Gemini 4 Carbon (Oct 28, 59) is partners-only and moves nothing
+2026-10-27  The new index reshuffles the pack  @moonshot
+  > Index v5 sinks Grok 4.7, and Kimi K3.1 Pro takes fifth.
+  anthropic             Opus 5.5 still leads on the new index.
+  openai      +0.55     Astra re-rated to 57, a point off Opus.
+  google      +0.50     Argon at 50. Carbon is partners-only.
+  meta        +1.00     Wonder Full falls to 50 on v5.
+  moonshot    +0.30     BACK: Kimi K3.1 Pro, 46 to Grok's 35.
 
-# Gemini 4 Carbon (Oct 28, limited access), a day after Artificial Analysis Intelligence Index v5
-2026-10-28  Gemini 4 Carbon tops the board  @google
-  > Gemini 4 Carbon tops the boards, but it's partners-only.
-  anthropic             Outscored on paper. Opus 5.5 leads on track.
-  google      +0.40     Carbon: top of the board, limited access.
-  openai      +0.30     Astra re-rated upward, passed anyway.
-  meta        +1.35     New index is unkind to Wonder.
-  spacexai    +0.45     Grok 4.7 fading.
-
-# Claude Fable 5.2 and Mythos 5.2 (Nov 9): 65 on the index, Carbon 60, GPT-6 Astra 57
+# Claude Fable 5.2 (Nov 9): 65 on index v5, GPT-6 Astra 57
 2026-11-09  Fable 5.2 restores order  @anthropic
   > Fable 5.2 takes the top score back, 20% cheaper.
-  anthropic             Fable 5.2: five points clear again.
-  google      +1.25     Carbon: second, and still partners-only.
-  openai      +0.20     Astra now eight points back.
-  meta        +1.50     Muse Wonder can't see the leaders.
-  spacexai    +0.30     Grok 4.7. Close behind Meta.
+  anthropic             Fable 5.2: 65 on the index, clear again.
+  openai      +1.25     Astra eight points back.
+  google      +0.50     Carbon opens to everyone tomorrow.
+  meta        +1.10     Muse Wonder can't see the leaders.
+  moonshot    +0.35     K3.1 Pro weights out since 4 Nov.
 
-# Closing state: the owner's take, November 2026, unchanged. GPT-6.2 (Nov 17) and Gemini 4 Neon (Nov 18) lead into it
-2026-11-20  Clear air up front
-  > GPT-6.2 and Gemini 4 Neon land. OpenAI is second again.
+# Gemini 4 Carbon generally available (Nov 10): 60 on index v5, three ahead of Astra
+2026-11-10  Carbon goes public  @google
+  > Gemini 4 Carbon opens to everyone and Google takes second.
+  anthropic             Fable 5.2 stays in front.
+  google      +0.95     Carbon: second, and now on sale.
+  openai      +0.50     Astra three points back.
+  meta        +1.10     Wonder Full holds fourth.
+  moonshot    +0.35     Kimi K3.1 Pro remains fifth.
+
+# Closing state, November 2026. GPT-6.2 Astra (Nov 17, 62) and Gemini 4 Neon (Nov 18, 61); Fable 5.2 65.
+# Owner decision: Moonshot is fifth today, not SpaceX AI
+2026-11-20  Clear air up front  @openai
+  > GPT-6.2 and Gemini 4 Neon land, and OpenAI is second again.
   anthropic             Clear leader.
-  openai      +1.00     Still second.
-  google      +0.25     Caught up a lot. Right on OpenAI's gearbox.
-  meta        +1.70     Muse did well. Just ahead of SpaceX AI.
-  spacexai    +0.30     Close behind Meta.
+  openai      +0.80     GPT-6.2 Astra retakes second.
+  google      +0.15     Neon and Carbon: right on OpenAI's gearbox.
+  meta        +1.45     Muse Wonder: strong, but not on the API.
+  moonshot    +0.30     Kimi K3.1 Pro: fifth, ahead of Grok 4.7.
 
 `;
 
