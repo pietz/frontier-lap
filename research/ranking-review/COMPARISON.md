@@ -52,3 +52,7 @@ These are in only one ranking:
 2. **Order:** at each event, use the order that at least two rankings give. Where all three differ, the owner decides.
 3. **Gaps:** take the middle value (median) of the three.
 4. **Captions and notes:** rewrite them to match the merged result.
+
+## Owner decisions
+
+- **2026-11-21: today's fifth place is Moonshot.** SpaceX AI drops out after the index v5 re-rating, which all three rankings support.
