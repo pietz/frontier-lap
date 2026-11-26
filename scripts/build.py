@@ -16,7 +16,7 @@ html = HTML.read_text(encoding='utf-8')
 labs_src = re.search(r'var LABS = \{(.*?)\n\};', html, re.S).group(1)
 LABS = set(re.findall(r'^\s{2}(\w+):\s*\{', labs_src, re.M))
 
-problems, dates = [], set()
+problems, dates, steps = [], set(), 0
 text = CSV.read_text(encoding='utf-8')
 rows = list(csv.reader(text.splitlines()))
 if not rows or [h.strip() for h in rows[0]] != HEAD:
@@ -32,9 +32,9 @@ for n, r in enumerate(rows[1:], start=2):
         datetime.date.fromisoformat(d['date'])
     except ValueError:
         problems.append(f'line {n}: "{d["date"]}" is not a date (YYYY-MM-DD)')
-    if d['date'] in dates:
-        problems.append(f'line {n}: {d["date"]} appears twice')
-    dates.add(d['date'])
+    if dates and d['date'] < max(dates):
+        problems.append(f'line {n}: {d["date"]} comes after a later date; keep the rows in date order')
+    dates.add(d['date']); steps += 1
     ids = [d[f'p{i}'] for i in range(1, 6)]
     for i in ids:
         if i not in LABS:
@@ -48,8 +48,8 @@ for n, r in enumerate(rows[1:], start=2):
         if sc[0] <= 0:
             problems.append(f'line {n}: s1 must be above 0')
         for i in range(4):
-            if sc[i] < sc[i + 1]:
-                problems.append(f'line {n}: s{i + 2} ({sc[i + 1]}) is higher than s{i + 1} ({sc[i]}); highest first')
+            if sc[i] <= sc[i + 1]:
+                problems.append(f'line {n}: s{i + 2} ({sc[i + 1]}) must be lower than s{i + 1} ({sc[i]}); each place at least one below the one ahead')
     except ValueError:
         problems.append(f'line {n}: s1..s5 must be whole numbers')
     if d['event'] and d['event'] not in ids and d['event'] not in prev:
@@ -66,4 +66,4 @@ new, k = re.subn(r'/\* RACE:BEGIN \*/.*?/\* RACE:END \*/', lambda _: block, html
 if k != 1:
     sys.exit('index.html: could not find exactly one RACE:BEGIN / RACE:END pair')
 HTML.write_text(new, encoding='utf-8')
-print(f'index.html updated: {len(dates)} steps from data/race.csv')
+print(f'index.html updated: {steps} steps from data/race.csv')
