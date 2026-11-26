@@ -1,0 +1,204 @@
+# Rank the best capability a paying user can reach; use coding, price and access to break close ties.
+
+[[events]]
+date    = 2026-01-01
+title   = "Where 2026 starts"
+gaps    = { openai = 0.00, google = 0.20, anthropic = 0.40, moonshot = 0.85, spacexai = 1.00 }
+why     = "The year-end AA v3.0 report has GPT-5.2 xhigh first with Gemini 3 Pro and Opus 4.5 close; the exact January 1 board and back-pair scores are unverified."
+sources = ["https://artificialanalysiscdn.com/public-reports/state-of-ai-2025-year-end-highlights-artificial-analysis.pdf", "https://api-docs.deepseek.com/news/news251201"]
+
+[[events]]
+date    = 2026-01-27
+title   = "Kimi closes on Gemini"
+lab     = "moonshot"
+caption = "Kimi K2.5 narrows the gap to the leaders on the new index and adds image input."
+gaps    = { openai = 0.00, anthropic = 0.20, google = 0.35, moonshot = 0.55, spacexai = 1.25 }
+why     = "AA v4.0; February 5 capture has GPT-5.2 51.2, Opus 4.5 49.7, Gemini 3 Pro 48.4, K2.5 46.7 and Grok 4 41.4; exact release-day scores are unverified."
+sources = ["https://artificialanalysis.ai/articles/kimi-k2-5-everything-you-need-to-know", "https://artificialanalysis.ai/methodology/intelligence-benchmarking#version-history", "https://web.archive.org/web/20260205184229/https://artificialanalysis.ai/leaderboards/models"]
+
+[[events]]
+date    = 2026-02-05
+title   = "Opus takes the lead"
+lab     = "anthropic"
+caption = "Opus 4.6 puts Claude ahead, with GPT-5.3-Codex close in the terminal."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.65, moonshot = 0.90, spacexai = 1.55 }
+why     = "AA v4.0 family; March 2 capture has Opus 4.6 at 53 and GPT-5.3-Codex at 54, launch-day scores unverified; Opus gets the edge for broader availability and strong coding."
+sources = ["https://www.anthropic.com/news/claude-opus-4-6", "https://openai.com/index/introducing-gpt-5-3-codex/", "https://web.archive.org/web/20260302234417/https://artificialanalysis.ai/leaderboards/models", "https://thezvi.substack.com/p/claude-opus-46-escalates-things-quickly"]
+
+[[events]]
+date    = 2026-02-19
+title   = "Gemini takes pole"
+lab     = "google"
+caption = "Gemini 3.1 Pro opens a four-point lead and is available in AI Studio and the app."
+gaps    = { google = 0.00, anthropic = 0.60, openai = 0.80, moonshot = 1.30, spacexai = 1.65 }
+why     = "AA v4.0 family; Gemini 3.1 Pro 57 versus Opus 4.6 53 and general-purpose GPT-5.2 51; Codex keeps OpenAI close, and broad Grok 4.20 access is unverified for this date."
+sources = ["https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-pro/", "https://web.archive.org/web/20260219174834/https://artificialanalysis.ai/models/gemini-3-1-pro-preview", "https://web.archive.org/web/20260302234417/https://artificialanalysis.ai/leaderboards/models"]
+
+[[events]]
+date    = 2026-03-05
+title   = "GPT-5.4 draws level"
+lab     = "openai"
+caption = "GPT-5.4 matches Gemini on the index and edges ahead with Codex."
+gaps    = { openai = 0.00, google = 0.15, anthropic = 0.60, moonshot = 1.05, spacexai = 1.35 }
+why     = "AA v4.0 family; period scores put GPT-5.4 and Gemini 3.1 Pro at 57 and Opus 4.6 at 53; exact launch-day AA capture unverified, with Codex breaking the tie."
+sources = ["https://openai.com/index/introducing-gpt-5-4/", "https://artificialanalysis.ai/articles/kimi-k2-6-the-new-leading-open-weights-model", "https://thezvi.substack.com/p/gpt-54-is-a-substantial-upgrade"]
+
+[[events]]
+date    = 2026-04-08
+title   = "Meta rejoins the race"
+lab     = "meta"
+caption = "Muse Spark puts Meta fourth through its app, edging out Kimi."
+gaps    = { openai = 0.00, google = 0.15, anthropic = 0.55, meta = 0.85, spacexai = 1.20 }
+why     = "AA v4.0 family; Muse Spark 52, Grok 4.20 about 49 and K2.5 47; Muse's public app earns fourth with an access penalty, and Mythos remains restricted."
+sources = ["https://artificialanalysis.ai/articles/muse-spark-everything-you-need-to-know", "https://docs.x.ai/developers/release-notes", "https://www.anthropic.com/news/project-glasswing"]
+
+[[events]]
+date    = 2026-04-23
+title   = "GPT-5.5 opens a lead"
+lab     = "openai"
+caption = "GPT-5.5 goes three points clear, while this week's Kimi K2.6 takes fourth."
+gaps    = { openai = 0.00, anthropic = 0.50, google = 0.65, moonshot = 1.05, meta = 1.35 }
+why     = "AA v4.0 family; GPT-5.5 60, Opus 4.7 and Gemini 3.1 Pro 57, Kimi K2.6 54 and Muse Spark 52; Claude Code breaks the tie for second."
+sources = ["https://openai.com/index/introducing-gpt-5-5/", "https://artificialanalysis.ai/articles/openai-gpt5-5-is-the-new-leading-AI-model/", "https://artificialanalysis.ai/articles/kimi-k2-6-the-new-leading-open-weights-model", "https://thezvi.substack.com/p/gpt-55-capabilities-and-reactions"]
+
+[[events]]
+date    = 2026-04-24
+title   = "DeepSeek takes fifth"
+lab     = "deepseek"
+caption = "V4 Pro ties Muse Spark and takes fifth with downloadable weights and API access."
+gaps    = { openai = 0.00, anthropic = 0.50, google = 0.65, moonshot = 1.05, deepseek = 1.30 }
+why     = "AA v4.0 family; V4 Pro rises from V3.2's 42 to 52, tied with Muse Spark; API access, open weights and strong knowledge work break the tie despite weaker factual reliability."
+sources = ["https://artificialanalysis.ai/articles/deepseek-is-back-among-the-leading-open-weights-models-with-v4-pro-and-v4-flash/", "https://artificialanalysis.ai/articles/muse-spark-everything-you-need-to-know"]
+
+[[events]]
+date    = 2026-05-28
+title   = "Opus edges back ahead"
+lab     = "anthropic"
+caption = "Opus 4.8 retakes the lead, and April's Grok 4.3 has pushed DeepSeek out."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.80, moonshot = 1.20, spacexai = 1.40 }
+why     = "AA v4.0 family; Opus 4.8 61.4 versus GPT-5.5 60.2, with Gemini 3.1 Pro 57, K2.6 54 and Grok 4.3 53 from nearby comparisons."
+sources = ["https://artificialanalysis.ai/articles/claude-opus-4-8-analysis-and-benchmarks", "https://every.to/vibe-check/opus-4-8-vibecheck", "https://artificialanalysis.ai/articles/xai-launches-grok-4-3-with-improved-agentic-performance-and-lower-pricing/"]
+
+[[events]]
+date    = 2026-06-09
+title   = "Fable pulls clear"
+lab     = "anthropic"
+caption = "Fable 5 puts almost five index points between Anthropic and the next lab."
+gaps    = { anthropic = 0.00, openai = 1.10, google = 1.65, moonshot = 2.05, spacexai = 2.25 }
+why     = "AA v4.0 family; public Fable 5 scored 64.9 with fallback against GPT-5.5 at 60.2; Google still has Gemini 3.1 Pro and the faster 3.5 Flash."
+sources = ["https://www.anthropic.com/news/claude-fable-5-mythos-5", "https://artificialanalysis.ai/articles/claude-fable-5-mythos-intelligence-index", "https://artificialanalysis.ai/articles/gemini-3-5-flash-everything-you-need-to-know"]
+
+[[events]]
+date    = 2026-06-12
+title   = "Fable goes offline"
+lab     = "anthropic"
+caption = "Anthropic suspends Fable 5, leaving Opus 4.8 only just ahead of GPT-5.5."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.80, moonshot = 1.20, spacexai = 1.40 }
+why     = "AA v4.0 family; all Fable customer access was suspended and the usable leaders reverted to Opus 4.8 at 61.4 and GPT-5.5 at 60.2."
+sources = ["https://www.anthropic.com/news/fable-mythos-access", "https://artificialanalysis.ai/articles/claude-opus-4-8-analysis-and-benchmarks"]
+
+[[events]]
+date    = 2026-07-01
+title   = "Fable returns to service"
+lab     = "anthropic"
+caption = "Fable 5 returns to Claude and the API, restoring Anthropic's clear lead."
+gaps    = { anthropic = 0.00, openai = 1.00, google = 1.60, meta = 2.25, moonshot = 2.40 }
+why     = "AA v4.1; Fable 60, GPT-5.5 55, Gemini 3.5 Flash 50 and Muse Spark and K2.6 both 43; Muse's vision gives it fourth on the June re-rating."
+sources = ["https://www.anthropic.com/news/redeploying-fable-5", "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v4-1", "https://web.archive.org/web/20260701120956/https://artificialanalysis.ai/leaderboards/models"]
+
+[[events]]
+date    = 2026-07-09
+title   = "Sol and Grok close in"
+lab     = "openai"
+caption = "GPT-5.6 Sol closes to one point behind Fable, and yesterday's Grok 4.5 takes third."
+gaps    = { anthropic = 0.00, openai = 0.25, spacexai = 1.00, google = 1.50, meta = 2.10 }
+why     = "AA v4.1; Fable 60, GPT-5.6 Sol 59 and Grok 4.5 54; Grok Build also matches GPT-5.5 in Codex at lower cost, ahead of the July 10 Muse upgrade."
+sources = ["https://help.openai.com/en/articles/9624314-model-release-notes", "https://x.ai/news/grok-4-5", "https://artificialanalysis.ai/articles/grok-4-5-brings-spacexai-to-the-the-intelligence-frontier", "https://artificialanalysis.ai/articles/four-frontier-launches-in-eight-days-six-labs-now-field-a-model-above-50-on-the-artificial-analysis-intelligence-index"]
+
+[[events]]
+date    = 2026-07-16
+title   = "Kimi joins the podium"
+lab     = "moonshot"
+caption = "Kimi K3 takes third, and the newly upgraded Muse Spark pushes Google out."
+gaps    = { anthropic = 0.00, openai = 0.25, moonshot = 0.55, spacexai = 0.85, meta = 1.25 }
+why     = "AA v4.1; Fable 60, Sol 59, Kimi K3 57, Grok 4.5 54 and Muse Spark 1.1 51; Grok Build narrows the gap to Kimi, and Gemini scores below Muse."
+sources = ["https://www.kimi.com/en/blog/kimi-k3", "https://artificialanalysis.ai/articles/kimi-k3-achieves-3-in-the-artificial-analysis-intelligence-index-comparable-to-opus-4-8-and-gpt-5-5", "https://artificialanalysis.ai/articles/four-frontier-launches-in-eight-days-six-labs-now-field-a-model-above-50-on-the-artificial-analysis-intelligence-index"]
+
+[[events]]
+date    = 2026-09-09
+title   = "Astra draws level"
+lab     = "openai"
+caption = "Public GPT-6 Astra ties Fable 5.1 after two index revisions."
+gaps    = { openai = 0.00, anthropic = 0.15, meta = 1.05, spacexai = 1.20, moonshot = 1.40 }
+why     = "AA v4.3 gives Astra and Fable 5.1 53 and equal coding-agent scores; Astra wins on cost; broad access is confirmed by September 9, with exact rollout timing and the lower order uncertain."
+sources = ["https://openai.com/index/gpt-6-astra-next-generation-work/", "https://artificialanalysis.ai/articles/benchmarking-gpt-6-astra", "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v4-3", "https://artificialanalysis.ai/articles/muse-spark-1-3"]
+
+[[events]]
+date    = 2026-09-22
+title   = "Opus opens clear air"
+lab     = "anthropic"
+caption = "Opus 5.5 goes five points clear, while Grok 4.7 edges ahead of Meta."
+gaps    = { anthropic = 0.00, openai = 0.95, spacexai = 1.65, meta = 1.85, moonshot = 2.10 }
+why     = "AA v4.3 family; Opus 5.5 58 versus Astra 53; the October 2 capture has Grok 4.7 46, public Muse Spark 1.3 45 and K3 44, with exact September 22 back-pair scores unverified."
+sources = ["https://www.anthropic.com/claude-opus-5-5", "https://artificialanalysis.ai/articles/claude-opus-5-5", "https://artificialanalysis.ai/articles/benchmarking-grok-4-7", "https://web.archive.org/web/20261002174155/https://artificialanalysis.ai/leaderboards/models"]
+
+[[events]]
+date    = 2026-10-13
+title   = "Argon puts Google third"
+lab     = "google"
+caption = "Argon opens to the public, with yesterday's Muse Wonder Full close behind."
+gaps    = { anthropic = 0.00, openai = 0.85, google = 1.05, meta = 1.25, spacexai = 1.90 }
+why     = "AA v4.3 family; Opus 5.5 58, Astra and Argon 53, Wonder Full 56 in Muse Code and standard Wonder 52 on API; broader access gives Argon third."
+sources = ["https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-argon/", "https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs", "https://artificialanalysis.ai/articles/muse-wonder", "https://every.to/vibe-check/vc-gemini-4-argon-puts-google-back-on-the-frontier"]
+
+[[events]]
+date    = 2026-10-27
+title   = "The index reshuffles"
+lab     = "moonshot"
+caption = "The new index brings Astra within a point of Opus and puts Kimi fifth ahead of Grok."
+gaps    = { anthropic = 0.00, openai = 0.20, google = 1.35, meta = 1.55, moonshot = 2.00 }
+why     = "AA v5.0; Opus 5.5 58, Astra 57, Argon and Wonder Full 50, K3.1 Pro 46; Kimi had scored 55 on v4.3 four days earlier, but the new test mix drops it behind Google and Meta."
+sources = ["https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5", "https://artificialanalysis.ai/articles/kimi-k3-1-pro-launch-benchmarks", "https://web.archive.org/web/20261101010321/https://artificialanalysis.ai/leaderboards/models"]
+
+[[events]]
+date    = 2026-11-09
+title   = "Fable breaks away"
+lab     = "anthropic"
+caption = "Fable 5.2 arrives with a clear lead on hard tasks and long jobs."
+gaps    = { anthropic = 0.00, openai = 1.30, google = 2.25, meta = 2.45, moonshot = 2.90 }
+why     = "AA v5 family; Fable 5.2 65 on the nearby v5.0.1 board versus Astra 57; exact launch-day patch unverified, with Every finding gains on long unattended tasks."
+sources = ["https://www.anthropic.com/claude-fable-and-mythos-5-2", "https://artificialanalysis.ai/models/claude-fable-5-2", "https://every.to/vibe-check/fable-5-2"]
+
+[[events]]
+date    = 2026-11-10
+title   = "Carbon puts Google second"
+lab     = "google"
+caption = "Carbon opens beyond its partner preview and puts Google ahead of Astra."
+gaps    = { anthropic = 0.00, google = 0.95, openai = 1.30, meta = 2.45, moonshot = 2.90 }
+why     = "AA v5 family; Carbon high 59 on v5.0 and 60 on v5.0.1 versus Astra 57; exact launch-day patch unverified, with public rollout confirmed by Google."
+sources = ["https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-carbon-now-available/", "https://web.archive.org/web/20261101010321/https://artificialanalysis.ai/leaderboards/models", "https://artificialanalysis.ai/articles/gemini-4-neon-intelligence-gain"]
+
+[[events]]
+date    = 2026-11-18
+title   = "Neon keeps Google close"
+lab     = "google"
+caption = "Astra 6.2 retakes second, and Neon closes within a point the next day."
+gaps    = { anthropic = 0.00, openai = 0.55, google = 0.75, meta = 2.35, moonshot = 2.65 }
+why     = "AA v5.0.1 puts Fable 5.2 at 65, the November 17 Astra 6.2 at 62 and Neon at 61; Muse Code makes Wonder Full reachable at 50, ahead of Kimi at 46."
+sources = ["https://openai.com/index/introducing-gpt-6-2-astra-sol/", "https://artificialanalysis.ai/articles/gemini-4-neon-intelligence-gain", "https://artificialanalysis.ai/leaderboards/models", "https://artificialanalysis.ai/articles/muse-wonder"]
+
+# Left out:
+# GPT-5.3-Codex: February 5 co-release, included with Opus 4.6.
+# Grok 4.20: March API release preserved fifth.
+# Mythos Preview and Mythos 5.2: restricted access.
+# Opus 4.7 and Kimi K2.6: April changes captured in the GPT-5.5 grid.
+# Grok 4.3: retook fifth after DeepSeek's brief run, captured with Opus 4.8.
+# Gemini 3.5 Flash and Sonnet 5: useful faster tiers below their flagships.
+# AA v4.1: new standings captured when Fable returned.
+# Grok 4.5 and Muse Spark 1.1: adjacent launches captured in the July 9 and 16 grids.
+# Opus 5, Grok 4.6, Muse Spark 1.3 and Fable 5.1: intervening gains captured at Astra's rollout.
+# Muse Wonder Full: captured with Argon the following day.
+# Kimi K3.1 Pro: short-lived podium case on v4.3, captured with the v5 re-rating.
+# Gemini 4 Carbon preview: restricted until November 10.
+# Muse Ember and Gemini 4 Hydrogen: lower-cost tiers below their labs' leaders.
+# GPT-6.2 Astra and Sol: captured with Neon the following day.

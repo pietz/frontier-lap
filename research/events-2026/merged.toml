@@ -1,0 +1,149 @@
+# 2026 merged from sol.toml, astra.toml and sonnet.toml.
+# Rules (as in research/ranking-review/MERGED.md): an event is kept when two of the three have it;
+# the order is the one two of them give; each gap is the middle value of the three (mean of two
+# where only two have the event), rounded to 0.05 and nudged where needed to keep the majority order.
+# Owner decision carried over: Anthropic leads from December 2025, so it starts 2026 in front.
+# Sources and reasoning for each step are in the three source files.
+
+[[events]]
+date    = 2026-01-01
+title   = "Where 2026 starts"
+gaps    = { anthropic = 0.00, openai = 0.10, google = 0.25, moonshot = 0.85, spacexai = 1.05 }
+
+[[events]]
+date    = 2026-01-27
+title   = "Kimi closes in"
+lab     = "moonshot"
+caption = "Kimi K2.5 brings open weights within two index points of Gemini 3 Pro."
+gaps    = { anthropic = 0.00, openai = 0.15, google = 0.30, moonshot = 0.55, spacexai = 1.30 }
+
+[[events]]
+date    = 2026-02-05
+title   = "Claude Code fever"
+lab     = "anthropic"
+caption = "Opus 4.6 and Claude Code lead, as GPT-5.3-Codex lands the same day."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.65, moonshot = 0.90, spacexai = 1.55 }
+
+[[events]]
+date    = 2026-02-19
+title   = "Gemini takes pole"
+lab     = "google"
+caption = "Gemini 3.1 Pro scores 57, four clear of Opus 4.6, and Google leads."
+gaps    = { google = 0.00, anthropic = 0.50, openai = 0.60, moonshot = 1.30, spacexai = 1.65 }
+
+[[events]]
+date    = 2026-03-05
+title   = "GPT-5.4 draws level"
+lab     = "openai"
+caption = "GPT-5.4 matches Gemini on the index and edges ahead with Codex."
+gaps    = { openai = 0.00, google = 0.15, anthropic = 0.55, spacexai = 1.15, moonshot = 1.30 }
+
+[[events]]
+date    = 2026-04-08
+title   = "Meta is back"
+lab     = "meta"
+caption = "Muse Spark puts Meta back in the top five. Claude Mythos stays partners-only."
+gaps    = { openai = 0.00, google = 0.15, anthropic = 0.55, meta = 0.85, spacexai = 1.35 }
+
+[[events]]
+date    = 2026-04-23
+title   = "GPT-5.5 opens daylight"
+lab     = "openai"
+caption = "GPT-5.5 goes three points clear as Kimi K2.6 and Grok 4.3 fill out the five."
+gaps    = { openai = 0.00, anthropic = 0.45, google = 0.65, moonshot = 1.05, spacexai = 1.30 }
+
+[[events]]
+date    = 2026-05-28
+title   = "Opus 4.8 retakes the lead"
+lab     = "anthropic"
+caption = "Opus 4.8 edges past GPT-5.5 by about a point. Google I/O brings a Flash, no Pro."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.80, moonshot = 1.20, spacexai = 1.40 }
+
+[[events]]
+date    = 2026-06-09
+title   = "Fable 5 breaks away"
+lab     = "anthropic"
+caption = "Fable 5 launches nearly five points clear, the biggest swing of the year."
+gaps    = { anthropic = 0.00, openai = 1.10, google = 1.50, moonshot = 2.00, spacexai = 2.20 }
+
+[[events]]
+date    = 2026-06-12
+title   = "Red flag for Fable 5"
+lab     = "anthropic"
+caption = "A Commerce Department directive takes Fable 5 offline; Opus 4.8 leads narrowly."
+gaps    = { anthropic = 0.00, openai = 0.25, google = 0.80, moonshot = 1.20, spacexai = 1.40 }
+
+[[events]]
+date    = 2026-07-01
+title   = "Fable returns"
+lab     = "anthropic"
+caption = "Fable 5 returns to Claude and the API, reopening a five-point lead."
+gaps    = { anthropic = 0.00, openai = 1.00, google = 1.65, meta = 2.45, moonshot = 2.55 }
+
+[[events]]
+date    = 2026-07-09
+title   = "Sol and Grok close in"
+lab     = "openai"
+caption = "GPT-5.6 Sol lands a point behind Fable, a day after Grok 4.5 lifts SpaceX AI to third."
+gaps    = { anthropic = 0.00, openai = 0.25, spacexai = 1.00, google = 1.60, meta = 1.85 }
+
+[[events]]
+date    = 2026-07-16
+title   = "Kimi K3 takes third"
+lab     = "moonshot"
+caption = "Kimi K3 scores 57 and takes third, though it runs slow and hallucinates more."
+gaps    = { anthropic = 0.00, openai = 0.25, moonshot = 0.55, spacexai = 0.95, meta = 1.45 }
+
+[[events]]
+date    = 2026-09-03
+title   = "GPT-6 arrives"
+lab     = "openai"
+caption = "GPT-6 Astra lands level with Fable 5.1, and Muse Spark 1.3 puts Meta third."
+gaps    = { anthropic = 0.00, openai = 0.15, meta = 1.10, spacexai = 1.25, moonshot = 1.45 }
+
+[[events]]
+date    = 2026-09-22
+title   = "Opus 5.5 pulls clear"
+lab     = "anthropic"
+caption = "Opus 5.5 goes five points clear of GPT-6 and tops the Coding Agent Index."
+gaps    = { anthropic = 0.00, openai = 0.95, spacexai = 1.80, meta = 1.90, moonshot = 2.10 }
+
+[[events]]
+date    = 2026-10-13
+title   = "Gemini 4 Argon opens up"
+lab     = "google"
+caption = "Gemini 4 Argon goes public level with GPT-6, and Google is back in third."
+gaps    = { anthropic = 0.00, openai = 0.85, google = 1.05, meta = 1.25, spacexai = 1.90 }
+
+[[events]]
+date    = 2026-10-27
+title   = "The index reshuffles"
+lab     = "moonshot"
+caption = "Index v5 brings Astra within a point of Opus and puts Kimi fifth, ahead of Grok."
+gaps    = { anthropic = 0.00, openai = 0.20, google = 1.25, meta = 1.50, moonshot = 2.00 }
+
+[[events]]
+date    = 2026-11-09
+title   = "Fable 5.2 restores order"
+lab     = "anthropic"
+caption = "Fable 5.2 scores 65 on index v5, eight points clear of GPT-6 Astra."
+gaps    = { anthropic = 0.00, openai = 1.30, google = 2.25, meta = 2.45, moonshot = 2.90 }
+
+[[events]]
+date    = 2026-11-10
+title   = "Carbon goes public"
+lab     = "google"
+caption = "Gemini 4 Carbon opens to everyone and passes Astra for second."
+gaps    = { anthropic = 0.00, google = 0.95, openai = 1.30, meta = 2.45, moonshot = 2.90 }
+
+[[events]]
+date    = 2026-11-18
+title   = "GPT-6.2 and Neon land"
+lab     = "openai"
+caption = "GPT-6.2 Astra retakes second, and Gemini 4 Neon closes within a point."
+gaps    = { anthropic = 0.00, openai = 0.55, google = 0.70, meta = 2.35, moonshot = 2.65 }
+
+# Left out (only one of the three had it as a step):
+# DeepSeek V4 Pro takes fifth for a day (24 Apr, Sol). The other two keep DeepSeek out all year.
+# Muse Spark 1.3 as its own step (2 Sep, Astra): folded into the GPT-6 step.
+# Kimi K3.1 Pro passes Gemini and Astra on index v4.3 (23 Oct, Astra): undone four days later by v5.
