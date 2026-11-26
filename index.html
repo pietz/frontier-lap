@@ -91,6 +91,9 @@
   #play .pause { display: none; }
   #play.playing .pause { display: block; }
   #play.playing .go { display: none; }
+  #play .re { display: none; }
+  #play.atend:not(.playing) .re { display: block; }
+  #play.atend:not(.playing) .go { display: none; }
   #tl { position: relative; flex: 1; height: 62px; }
   #tl .rail { position: absolute; left: 0; right: 0; top: 18px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.17); }
   #tl .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px; background: linear-gradient(90deg, rgba(182,92,255,.15), var(--purple)); }
@@ -183,6 +186,7 @@
   <button id="play" aria-label="Replay the season">
     <svg class="go" viewBox="0 0 14 14"><path d="M3 1.2v11.6L13 7z"/></svg>
     <svg class="pause" viewBox="0 0 14 14"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg>
+    <svg class="re" viewBox="0 0 14 14"><path d="M7 1.6a5.4 5.4 0 1 1-5.1 3.6l1.6.6A3.7 3.7 0 1 0 7 3.3v1.9L3.6 2.45 7 -.3z"/></svg>
   </button>
   <div id="tl">
     <div class="rail"><div class="fill"></div></div>
@@ -2200,6 +2204,7 @@ function syncEvent(t, dt) {
 const shownIdx = idx => { const i = Math.min(Math.floor(idx), LAST); return i + ease(idx - i); };
 const idxOfShown = v => {           // the other way round, for the scrubber
   const i = Math.min(Math.floor(v), LAST), want = v - i;
+  if (i >= LAST || want <= 0) return i;   // at a snapshot (the last one included): exactly there, never a hair past today
   let a = 0, b = 1;
   for (let n = 0; n < 24; n++) { const m = (a + b) / 2; if (ease(m) < want) a = m; else b = m; }
   return i + (a + b) / 2;
@@ -2265,9 +2270,37 @@ function setCurtain(v) { v = clamp(v, 0, 1).toFixed(2); if (curtainEl.style.opac
 function cancelReplay() { if (!replay.on) return; replay.on = false; setCurtain(0); }
 function play() {
   if (LAST < 1) return;
-  if (replay.on) { cancelReplay(); settle(); return; }                             // the same button stops it
+  if (replay.on) { cancelReplay(); settle(); return; }                             // the same button pauses
+  const from = tl.anim ? tl.anim.to : tl.idx;
   tl.anim = null; tl.dragging = false;
   replay.on = true; replay.t = 0; replay.onGrid = false; replay.plan = buildPlan();
+  // At today: the whole season again, from the grid. Anywhere else: drive on from here.
+  replay.resume = from < LAST - 1e-3;
+  if (replay.resume) {
+    tl.idx = from;
+    const steps = replay.plan.steps, i = Math.floor(from);
+    let off = 0;
+    for (let k = 0; k <= i && k < steps.length; k++) {
+      const st = steps[k];
+      if (EVENTS && !st.set) { st.move = stepPlan(k).secs; st.set = true; }
+      off += k < i ? st.move + st.hold : (from - i) * st.move;
+    }
+    replay.off = off;
+  }
+}
+// Where the replay's drive is after r seconds of it: tl.idx along the steps. True once it is at today.
+function driveTo(r) {
+  const plan = replay.plan;
+  tl.idx = 0;
+  for (let i = 0; i < plan.steps.length && r > 0; i++) {
+    const s = plan.steps[i];
+    if (EVENTS && !s.set) { s.move = stepPlan(i).secs; s.set = true; }   // about to be driven: its plan is needed now anyway
+    if (r < s.move) { tl.idx = i + r / s.move; return false; }
+    tl.idx = i + 1; r -= s.move;
+    if (r < s.hold) return false;
+    r -= s.hold;
+  }
+  return r > 0;
 }
 function stepReplay(dt) {
   if (!replay.on) {                 // racing as normal; if a replay was cut short on the grid, roll off it
@@ -2276,22 +2309,18 @@ function stepReplay(dt) {
     return;
   }
   const T = (replay.t += dt * SPEED), plan = replay.plan;
+  if (replay.resume) {              // playing on from a point on the timeline: no grid, no lights
+    for (const k of ['p', 'speedF', 'hud']) intro[k] = Math.min(1, intro[k] + dt * (k === 'p' ? .8 : 2.5));
+    setLights(0);
+    if (driveTo(replay.off + T)) { replay.on = false; tl.idx = LAST; }
+    return;
+  }
   setCurtain(T < DIP ? T / DIP : 1 - (T - DIP) / DIP);
   if (T < DIP) return;
   if (!replay.onGrid) { replay.onGrid = true; toGrid(); }
   const k = T - DIP - .2;           // let the picture come back before the first light
   setIntro(Math.max(0, k));
-  let r = k - PLAYBACK.lights - PLAYBACK.launch - plan.first;
-  tl.idx = 0;
-  for (let i = 0; i < plan.steps.length && r > 0; i++) {
-    const s = plan.steps[i];
-    if (EVENTS && !s.set) { s.move = stepPlan(i).secs; s.set = true; }   // about to be driven: its plan is needed now anyway
-    if (r < s.move) { tl.idx = i + r / s.move; return; }
-    tl.idx = i + 1; r -= s.move;
-    if (r < s.hold) return;
-    r -= s.hold;
-  }
-  if (r > 0) replay.on = false;     // arrived at today
+  if (driveTo(k - PLAYBACK.lights - PLAYBACK.launch - plan.first)) replay.on = false;     // arrived at today
 }
 
 scrub.addEventListener('input', () => { cancelReplay(); tl.anim = null; tl.dragging = true; tl.idx = idxOfShown(posToIdx(scrub.value / 1000)); });
@@ -2324,6 +2353,10 @@ function syncTimelineUI() {
   const o = (1 - smooth(.04, .2, dist)).toFixed(2);
   if (uiCache.o !== o) headEl.style.opacity = demoEl.style.opacity = uiCache.o = o;
   if (uiCache.playing !== replay.on) playBtn.classList.toggle('playing', uiCache.playing = replay.on);
+  const atEnd = !tl.dragging && (tl.anim ? tl.anim.to : tl.idx) >= LAST - 1e-3;
+  const label = replay.on ? 'Pause' : atEnd ? 'Replay the season' : 'Play from here';
+  if (uiCache.atEnd !== atEnd) playBtn.classList.toggle('atend', uiCache.atEnd = atEnd);
+  if (uiCache.label !== label) playBtn.setAttribute('aria-label', uiCache.label = label);
 }
 
 /* ---------- life: how far a car may move about ----------
@@ -2375,7 +2408,7 @@ function updateCars(t, dt) {
   // 1. Where the drive plan puts every car at this point of the timeline. At a snapshot that is
   //    its hold; between two it is the step from one to the other; a replay starts with the step
   //    off the grid. A lab only in the earlier snapshot is retiring, one only in the later is joining.
-  const i = clamp(Math.floor(tl.idx), 0, LAST), f = tl.idx - i, hold = drive.holds[i];
+  const i = clamp(Math.floor(tl.idx), 0, LAST), f = i >= LAST ? 0 : tl.idx - i, hold = drive.holds[i];
   const launching = intro.p < 1 && !tl.idx;
   const st = launching ? stepPlan(-1) : f > 0 ? stepPlan(i) : null, F = launching ? intro.p : f;
   // px → seconds, for the gap numbers: the snapshot's own map at rest, the two blended on the way
