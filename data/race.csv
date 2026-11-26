@@ -32,4 +32,4 @@ date,event,p1,p2,p3,p4,p5,s1,s2,s3,s4,s5,caption
 2026-11-09,anthropic,anthropic,openai,meta,google,moonshot,20,13,8,6,5,Fable 5.2 opens up a clear lead.
 2026-11-10,google,anthropic,openai,google,meta,moonshot,20,13,9,8,5,"Gemini 4 Carbon goes public, Google's first strong model since 3.1 Pro."
 2026-11-17,openai,anthropic,openai,google,meta,moonshot,20,13,9,8,5,GPT-6.2 Astra and Sol score higher but feel worse to use. OpenAI holds second.
-2026-11-18,google,anthropic,google,openai,meta,moonshot,20,12,11,3,1,"Gemini 4 Neon puts Google just ahead of OpenAI, with Anthropic well out in front."
+2026-11-18,google,anthropic,google,openai,meta,moonshot,20,13,12,3,1,"Gemini 4 Neon puts Google just ahead of OpenAI, with Anthropic well out in front."
